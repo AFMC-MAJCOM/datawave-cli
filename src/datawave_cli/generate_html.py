@@ -1,8 +1,5 @@
 import json
 import os
-import webbrowser
-from collections import defaultdict
-from pathlib import Path
 
 
 keys_to_ignore = []
@@ -12,9 +9,8 @@ front_columns = ['NAME', 'VISIBILITY']
 end_columns = ['TERM_COUNT', 'LOAD_DATE', 'ORIG_FILE', 'RECORD_ID']
 
 
-def gen_html(headers: set, events: list, metadata: dict,
-             template_path: os.PathLike | str = 'resources/template.html'):
-    """Creates a string of an html file from a set of parameters
+def gen_html(headers: set, events: list, metadata: dict):
+    """Creates html tables for query metadata and results from a set of headers and events.
 
     Not every event needs to contain every header from the headers set.
     If a key is not found for an event it will display 'N/A' as the value for that cell.
@@ -32,30 +28,25 @@ def gen_html(headers: set, events: list, metadata: dict,
     metadata: dict
         The metadata information from the datawave_cli output file.
 
-    template_path: os.PathLike | str
-        The path to the html file to use as a template. This can be any HTML file as long as it has the correct
-        placeholder comments to be replaced. Defaults to resources/template.html.
-
     Returns
     -------
-    html_output: str
-        The string of an HTML file.
+    html_output: dict
+        A dictionary containing html tables for `metadata_table` and `results_table`.
     """
-    with open(template_path, 'r') as file:
-        html_template = file.read()
+    html_output = {}
 
     # Generate query stuff from the metadata
-    metadata_html = '<table>'
-    metadata_html += '<tr>'
+    metadata_html = '<table>\n'
+    metadata_html += '  <tr>\n'
     for key in metadata.keys():
-        metadata_html += f'<th>{key}</th>'
-    metadata_html += '</tr>'
-    metadata_html += '<tr>'
+        metadata_html += f'    <th>{key}</th>\n'
+    metadata_html += '  </tr>\n'
+    metadata_html += '  <tr>\n'
     for value in metadata.values():
-        metadata_html += f'<td>{value}</td>'
-    metadata_html += '</tr>'
-    metadata_html += '</table>'
-    html_output = html_template.replace('<!-- METADATA PLACEHOLDER -->', metadata_html)
+        metadata_html += f'    <td>{value}</td>\n'
+    metadata_html += '  </tr>\n'
+    metadata_html += '</table>\n'
+    html_output['metadata_table'] = metadata_html
 
     # Organize the headers based on lists defined at top of file
     ordered_headers = [header for header in front_columns if header in headers]
@@ -63,25 +54,28 @@ def gen_html(headers: set, events: list, metadata: dict,
     ordered_headers += [header for header in end_columns if header in headers]
 
     # Generate table header stuff
-    header_html = '<tr>\n'
+    table_header = '  <tr>\n'
     for header in ordered_headers:
-        header_html += f'<th>{header}</th>\n'
-    header_html += '</tr>\n'
-
-    html_output = html_output.replace('<!-- HEADER PLACEHOLDER -->', header_html)
+        table_header += f'    <th>{header}</th>\n'
+    table_header += '  </tr>\n'
 
     # Generate table body stuff
-    table_html = ''
+    table_body = ''
     for event in events:
-        table_html += '<tr>\n'
+        table_body += '  <tr>\n'
         for header in ordered_headers:
             value = event.get(header, 'N/A')
             if isinstance(value, list):
                 value = ', '.join(value)
-            table_html += f'<td>{value}</td>\n'
-        table_html += '</tr>\n'
+            table_body += f'    <td>{value}</td>\n'
+        table_body += '  </tr>\n'
 
-    html_output = html_output.replace('<!-- TABLE PLACEHOLDER -->', table_html)
+    results_table = '<table>\n'
+    results_table += table_header
+    results_table += table_body
+    results_table += '</table>\n'
+
+    html_output['results_table'] = results_table
 
     return html_output
 
@@ -98,6 +92,10 @@ def htmlify(input_file: os.PathLike | str, out_file: str = 'resources/output.htm
 
     out_file: str, Optional
         The path of the output file. Defaults to `./resources/output.html`
+
+    Returns
+    -------vsco
+    A dictionary containing the two generated HTML tables.
     """
     with open(input_file, 'r') as f:
         raw_data = json.load(f)
@@ -106,12 +104,10 @@ def htmlify(input_file: os.PathLike | str, out_file: str = 'resources/output.htm
 
     html_output = gen_html(headers, raw_data['events'], metadata=raw_data['metadata'])
 
-    with open(out_file, 'w') as f:
-        f.write(html_output)
-
-    # Note: this line does not work in WSL but is being left cause it does work for powershell
-    webbrowser.open(f'file://{Path(out_file).resolve()}')
+    return html_output
 
 
 if __name__ == '__main__':
-    htmlify(r'resources/sample.json')
+    res = htmlify(r'resources/sample.json')
+    print(res['metadata_table'])
+    print(res['results_table'])

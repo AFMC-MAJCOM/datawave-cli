@@ -325,84 +325,46 @@ def filter_results(results_in: list, filter_on: str):
     return [{key: event.get(key, "Not Found") for key in keys} for event in results_in]
 
 
-def print_query_fields(query_params: QueryParams, cert: str, decode_raw: bool, filter_on: str,
-                       log: Logger = logging.getLogger('query_interactions'),
-                       namespace: str = pods.namespace, use_ip: bool = False):
-    """
-    Helper method for displaying fields of a query.
+def print_query(results: dict, decode_raw: bool):
+    """Prints the query results to the console.
 
     Parameters
     ----------
-    query_params: QueryParams
-        the data object storing all the necessary pieces for a DataWave query.
-    cert: str
-        the location of the certificate to use in the HTTP Request
+    results: dict
+        The query results dictionary, expected to have items for `metadata` and `events.
     decode_raw: bool
         Boolean indicating if we should decode the raw data
-    log: Logger, optional
-        The logger object.
-    namespace: str, optional
-        the namespace to perform a query against.
-    use_ip: bool
-        Enables using the IP and Port instead of DNS
     """
-    connection = (QueryConnection.from_ip(pods.get_specific_pod(pods.web_datawave_info, namespace).pod_ip, '8443',
-                                          cert, query_params, log) if use_ip
-                  else QueryConnection(cert, query_params, log))
-    with connection as qc:
-        print_qc(qc, decode_raw, filter_on)
+    for event in results['events']:
+        for name, value in event.items():
+            if 'RAWDATA' in name:
+                if decode_raw:
+                    buffer = BytesIO(base64.b64decode(value))
+                    value = pd.read_parquet(buffer)
+                else:
+                    value = 'Contains raw data'
+            print(f'{name}: {value}')
+        print('-' * 10)
+    print(f'Query returned: {results["metadata"]["Returned Events"]} events.')
 
 
-def print_qc(qc: QueryConnection, decode_raw: bool, filter_on: str):
-    """
-    Loops over the data from the query connection object and prints it to console.
+def save_query(results: dict, filename: str, decode_raw: bool):
+    """Saves the query results to the provided file, decoding raw data if requested.
+
+    If `decode_raw` is True, the raw data fields will be decoded and written as parquet files at the same level as
+    the output file.
 
     Parameters
     ----------
-    qc: QueryConnection
-        the object performing and storing the datawave query information
-    decode_raw: bool
-        Boolean indicating if we should decode the raw data
-    filter_on: list | str
-        List of keys or single key to filter the data on
-    """
-    for data in qc:
-        for event in parse_and_filter_results(data, filter_on=filter_on):
-            for name, value in event.items():
-                if 'RAWDATA' in name:
-                    if decode_raw:
-                        buffer = BytesIO(base64.b64decode(value))
-                        value = pd.read_parquet(buffer)
-                    else:
-                        value = 'Contains raw data'
-                print(f'{name}: {value}')
-            print('-' * 10)
-    print(f'Query returned: {qc.results_count} events.')
-
-
-def save_query_fields(filename: str, query_params: QueryParams, cert: str, decode_raw: bool,
-                      log: Logger = logging.getLogger('query_interactions'),
-                      namespace: str = pods.namespace, use_ip: bool = False):
-    """
-    Helper method for saving fields of a query to a file.
-
-    Parameters
-    ----------
+    results: dict
+        The query results dictionary, expected to have items for `metadata` and `events.
     filename: str
-        path and name to where to save the query output.
-    query_params: QueryParams
-        the data object storing all the necessary pieces for a DataWave query.
-    cert: str
-        the location of the certificate to use in the HTTP Request
+        The filename to write the results to
     decode_raw: bool
-        Boolean indicating if we should decode the raw data
-    log: Logger, optional
-        The logger object.
-    namespace: str, optional
-        the namespace to perform a query against.
-    use_ip: bool
-        Enables using the IP and Port instead of DNS
+        Whether to decode the raw value found
     """
+    log = logging.getLogger('query_interactions')
+
     filepath = Path(filename)
     print(f'Outputting to {filepath.resolve()}')
     filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -417,49 +379,11 @@ def save_query_fields(filename: str, query_params: QueryParams, cert: str, decod
             raise e
         print(f'Existing file renamed to {renamed_path}')
 
-    connection = (QueryConnection.from_ip(pods.get_specific_pod(pods.web_datawave_info, namespace).pod_ip, '8443',
-                                          cert, query_params, log=log) if use_ip
-                  else QueryConnection(cert, query_params, log=log))
-    with connection as qc:
-        save_qc(qc, filename, decode_raw)
-
-    log.info(f"Saved output file to {filepath.resolve()}")
-    if decode_raw:
-        log.info(f'Saved raw data to {filepath.parent}/rawdata')
-
-
-def save_qc(qc: QueryConnection, filename: str, decode_raw: bool):
-    """
-    Loops through the data returned from the QueryConnection object and saves it to a file.
-
-    Parameters
-    ----------
-    qc: QueryConnection
-        the connection object to loop over
-    filename: str
-        The filename to write the results to
-    decode_raw: bool
-        Whether to decode the raw value found
-    """
-    events = []
-    for data in qc:
-        events.extend(parse_results(data))
-
-    # Generate some query level metadata from the results
-    metadata = {}
-    metadata['Query'] = qc.query_params.query
-    metadata['Returned Events'] = qc.results_count
-    metadata['Auths'] = qc.query_params.auths
-    cert = qc.cert[0] if isinstance(qc.cert, tuple) else qc.cert
-    metadata['Cert'] = Path(cert).stem
-    # current ms since epoch
-    metadata['Unix Timestamp(ms)'] = int(datetime.now().timestamp() * 1e3)
-
     with open(filename, 'w') as file:
-        json.dump({'metadata': metadata, 'events': events}, file, indent=2)
+        json.dump(results, file, indent=2)
 
     if decode_raw:
-        for event in events:
+        for event in results['events']:
             for key, value in event.items():
                 if 'RAWDATA' in key:
                     raw_bytes = base64.b64decode(value)
@@ -488,13 +412,34 @@ def main(args):
     else:
         cert = (args.cert, args.key)
 
-    if args.output is None:
-        print_query_fields(query_params, cert, args.decode_raw, args.filter, namespace=args.namespace, use_ip=args.ip)
-    else:
-        save_query_fields(args.output, query_params, cert, args.decode_raw, namespace=args.namespace, use_ip=args.ip)
+    events = []
+    connection = (QueryConnection.from_ip(pods.get_specific_pod(pods.web_datawave_info, args.namespace).pod_ip, '8443',
+                                          cert, query_params, log) if args.ip
+                  else QueryConnection(cert, query_params, log))
+    with connection as qc:
+        for data in qc:
+            events.extend(parse_and_filter_results(data, filter_on=args.filter))
 
-    if args.html:
-        htmlify(args.output, args.query, args.auths, Path(args.output).with_suffix('.html'))
+    # Generate some query level metadata from the results
+    metadata = {}
+    metadata['Query'] = qc.query_params.query
+    metadata['Returned Events'] = qc.results_count
+    metadata['Auths'] = qc.query_params.auths
+    cert = qc.cert[0] if isinstance(qc.cert, tuple) else qc.cert
+    metadata['Cert'] = Path(cert).stem
+    # current ms since epoch
+    metadata['Unix Timestamp(ms)'] = int(datetime.now().timestamp() * 1e3)
+
+    results = {'metadata': metadata, 'events': events}
+
+    if args.output is None:
+        print_query(results, args.decode_raw)
+    else:
+        save_query(results, args.output, args.decode_raw)
+        if args.html:
+            results['html'] = htmlify(args.output, Path(args.output).with_suffix('.html'))
+
+    return results
 
 
 @click.command
@@ -502,7 +447,7 @@ def main(args):
 @click.option("-q", "--query", type=str, required=True,
               help="The actual query to perform, must conform to JEXL formatting. "
                    + "https://commons.apache.org/proper/commons-jexl/reference/syntax.html")
-@click.option("--query-name", type=str, default="test-query", show_default=True,
+@click.option("--query-name", type=str, default="default_query", show_default=True,
               help="The name given to the query in the query request.")
 @click.option("--auths", type=str, required=True,
               help="A comma-separated list of authorizations to use within the query request.")
@@ -535,7 +480,7 @@ def query(**kwargs):
             Note: The raw binary content of the Parquet files is always included in the JSON output,
             regardless of the `-d` flag, allowing users to decode the data later if desired.
     """
-    main(SimpleNamespace(**kwargs))
+    return main(SimpleNamespace(**kwargs))
 
 
 if __name__ == "__main__":
