@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datawave_cli"
+version = "0.1.9"
+dependencies = [
+    "requests",
+    "kubernetes",
+    "pandas",
+    "argparse",
+    "pytest"
+]
+
+
+[project.scripts]
+datawave = "datawave_cli.main:main"

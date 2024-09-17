@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "ReturnedEvents": 7,
+    "Query": "GENRES == 'IntegrationTest'",
+    "Auths": "U,S,TS,C,CUI,NF,HVSACO",
+    "Cert": "wax_ladrian_cert",
+    "Unix_Timestamp": 1723472736205
+  },
+  "events": [
+    {
+      "LANGUAGE": "English",
+      "LOAD_DATE": "1722548490294",
+      "TERM_COUNT": "25",
+      "RUNTIME": "50",
+      "GENRES": [
+        "Action",
+        "Adventure",
+        "IntegrationTest"
+      ],
+      "URL": "https://www.crimsontide.com/series/17",
+      "NAME": "Crimson Tide",
+      "PREMIERED": "2024-09-30T00:00:00.000Z",
+      "STATUS": "Ongoing",
+      "VISIBILITY": "TS",
+      "ORIG_FILE": "somehow_even_more_shows.json|6|0",
+      "RECORD_ID": "19700101_5/tvmaze/czel09.e1uztc.-baf703",
+      "ID": "17",
+      "WEIGHT": "85",
+      "TYPE": "Scripted"
+    },
+    {
+      "LANGUAGE": "English",
+      "TERM_COUNT": "24",
+      "LOAD_DATE": "1722548490294",
+      "RUNTIME": "50",
+      "GENRES": [
+        "Horror",
+        "IntegrationTest",
+        "Mystery"
+      ],
+      "URL": "https://www.hauntedechoes.com/series/12",
+      "NAME": "Haunted Echoes",
+      "PREMIERED": "2022-04-22T00:00:00.000Z",
+      "STATUS": "Ended",
+      "VISIBILITY": "U&CUI",
+      "ORIG_FILE": "somehow_even_more_shows.json|1|0",
+      "RECORD_ID": "19700101_0/tvmaze/yetd6i.-c9y890.as3c9w",
+      "ID": "12",
+      "WEIGHT": "80",
+      "TYPE": "Scripted"
+    },
+    {
+      "LOAD_DATE": "1722548490294",
+      "LANGUAGE": "English",
+      "TERM_COUNT": "27",
+      "RUNTIME": "50",
+      "GENRES": [
+        "Sci-Fi",
+        "IntegrationTest",
+        "Thriller"
+      ],
+      "URL": "https://www.cybernexus.com/series/14",
+      "NAME": "Cyber Nexus",
+      "PREMIERED": "2024-10-18T00:00:00.000Z",
+      "STATUS": "Pre-Production",
+      "VISIBILITY": "S",
+      "ORIG_FILE": "somehow_even_more_shows.json|3|0",
+      "RECORD_ID": "19700101_0/tvmaze/-gfkpsk.k0lxoh.-bcdry",
+      "ID": "14",
+      "WEIGHT": "90",
+      "TYPE": "Scripted"
+    },
+    {
+      "TERM_COUNT": "30",
+      "LOAD_DATE": "1722548490294",
+      "LANGUAGE": "English",
+      "RUNTIME": "60",
+      "GENRES": [
+        "Adventure",
+        "Historical",
+        "IntegrationTest"
+      ],
+      "URL": "https://www.legendsoftheeast.com/series/18",
+      "NAME": "Legends of the East",
+      "PREMIERED": "2024-10-12T00:00:00.000Z",
+      "STATUS": "Pre-Production",
+      "VISIBILITY": "TS&NF",
+      "ORIG_FILE": "somehow_even_more_shows.json|7|0",
+      "RECORD_ID": "19700101_0/tvmaze/-mck1f7.-nh4urv.-nqbqz3",
+      "ID": "18",
+      "WEIGHT": "90",
+      "TYPE": "Scripted"
+    },
+    {
+      "LOAD_DATE": "1722548489294",
+      "TERM_COUNT": "29",
+      "LANGUAGE": "English",
+      "RUNTIME": "60",
+      "GENRES": [
+        "Thriller",
+        "Action",
+        "IntegrationTest"
+      ],
+      "URL": "https://www.operationblackout.com/series/11",
+      "NAME": "Operation Blackout",
+      "PREMIERED": "2024-03-15T00:00:00.000Z",
+      "VISIBILITY": "U",
+      "STATUS": "Ongoing",
+      "ORIG_FILE": "somehow_even_more_shows.json|0|0",
+      "RECORD_ID": "19700101_7/tvmaze/-aovx16.jmrsj0.-si6xb2",
+      "ID": "11",
+      "WEIGHT": "95",
+      "TYPE": "Scripted"
+    },
+    {
+      "LANGUAGE": "English",
+      "LOAD_DATE": "1722548490294",
+      "TERM_COUNT": "28",
+      "RUNTIME": "30",
+      "GENRES": [
+        "Romance",
+        "Comedy",
+        "IntegrationTest"
+      ],
+      "URL": "https://www.lovebytes.com/series/15",
+      "NAME": "Love Bytes",
+      "PREMIERED": "2024-07-02T00:00:00.000Z",
+      "STATUS": "Ongoing",
+      "VISIBILITY": "S&HVSACO",
+      "ORIG_FILE": "somehow_even_more_shows.json|4|0",
+      "RECORD_ID": "19700101_8/tvmaze/-dj2sbo.-7ha10w.-c45ulh",
+      "ID": "15",
+      "WEIGHT": "70",
+      "TYPE": "Scripted"
+    },
+    {
+      "LOAD_DATE": "1722548490294",
+      "LANGUAGE": "English",
+      "TERM_COUNT": "29",
+      "RUNTIME": "175",
+      "GENRES": [
+        "IntegrationTest",
+        "Fantasy",
+        "Action"
+      ],
+      "URL": "https://www.dragonsreign.com/series/13",
+      "NAME": "Dragon's Reign",
+      "PREMIERED": "2024-05-10T00:00:00.000Z",
+      "STATUS": "Mid-Season Haitus",
+      "VISIBILITY": "C",
+      "ORIG_FILE": "somehow_even_more_shows.json|2|0",
+      "RECORD_ID": "19700101_5/tvmaze/-dd13g3.-8zfvq7.-aldgdp",
+      "ID": "13",
+      "WEIGHT": "85",
+      "TYPE": "Scripted"
+    }
+  ]
+}

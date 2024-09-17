@@ -1,0 +1,37 @@
+Number of Returned Events: 2
+LOAD_DATE:1721935354667
+TERM_COUNT:29
+LANGUAGE:English
+RUNTIME:60
+GENRES:Thriller
+GENRES:Action
+GENRES:IntegrationTest
+URL:https://www.operationblackout.com/series/11
+NAME:Operation Blackout
+PREMIERED:2024-03-15T00:00:00.000Z
+VISIBILITY:U
+STATUS:Ongoing
+ORIG_FILE:test-1.json|0|0
+RECORD_ID:19700101_7/tvmaze/-aovx16.jmrsj0.-si6xb2
+ID:11
+WEIGHT:95
+TYPE:Scripted
+----------
+LANGUAGE:English
+TERM_COUNT:27
+LOAD_DATE:1721935355667
+RUNTIME:50
+GENRES:Sci-Fi
+GENRES:IntegrationTest
+GENRES:Thriller
+URL:https://www.cybernexus.com/series/14
+NAME:Cyber Nexus
+PREMIERED:2024-10-18T00:00:00.000Z
+STATUS:Pre-Production
+VISIBILITY:S
+ORIG_FILE:test-1.json|3|0
+RECORD_ID:19700101_0/tvmaze/-gfkpsk.k0lxoh.-bcdry
+ID:14
+WEIGHT:90
+TYPE:Scripted
+----------

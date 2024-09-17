@@ -1,0 +1,4 @@
+[pycodestyle]
+max-line-length = 120
+ignore = W292, W503
+# W292: no newline at end of file, W503: line break before binary operator
