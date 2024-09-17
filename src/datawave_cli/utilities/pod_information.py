@@ -3,9 +3,6 @@ from kubernetes.client.api import core_v1_api
 from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
-config.load_kube_config()
-core_v1 = core_v1_api.CoreV1Api()
-
 
 class PodInformation():
     """
@@ -27,6 +24,8 @@ class PodInformation():
         default: dev-datawave
     """
     def __init__(self, pod_labels: list, log_dir: str, namespace: str = 'dev-datawave'):
+        config.load_kube_config()
+        self.core_v1 = core_v1_api.CoreV1Api()
         self.pod_labels = pod_labels
         self.log_dir = log_dir
         self.namespace = namespace
@@ -44,7 +43,8 @@ class PodInformation():
             the namespace.
         """
         try:
-            pods = core_v1.list_namespaced_pod(namespace=self.namespace,
+            
+            pods = self.core_v1.list_namespaced_pod(namespace=self.namespace,
                                                label_selector=','.join(self.pod_labels)).items
             self.podname = pods[0].metadata.name
             self.pod_ip = pods[0].status.pod_ip
@@ -90,7 +90,7 @@ class PodInformation():
             cmd_to_run
         ]
 
-        resp = stream(core_v1.connect_get_namespaced_pod_exec,
+        resp = stream(self.core_v1.connect_get_namespaced_pod_exec,
                       self.podname,
                       self.namespace,
                       command=cmd,
