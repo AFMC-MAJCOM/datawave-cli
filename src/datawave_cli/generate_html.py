@@ -94,7 +94,7 @@ def htmlify(input_file: os.PathLike | str, out_file: str = 'resources/output.htm
         The path of the output file. Defaults to `./resources/output.html`
 
     Returns
-    -------vsco
+    -------
     A dictionary containing the two generated HTML tables.
     """
     with open(input_file, 'r') as f:

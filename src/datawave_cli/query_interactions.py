@@ -331,7 +331,7 @@ def print_query(results: dict, decode_raw: bool):
     Parameters
     ----------
     results: dict
-        The query results dictionary, expected to have items for `metadata` and `events.
+        The query results dictionary, expected to have items for `metadata` and `events`.
     decode_raw: bool
         Boolean indicating if we should decode the raw data
     """
@@ -361,7 +361,7 @@ def save_query(results: dict, filename: str, decode_raw: bool):
     filename: str
         The filename to write the results to
     decode_raw: bool
-        Whether to decode the raw value found
+        Whether to decode the raw values and write parquets.
     """
     log = logging.getLogger('query_interactions')
 
