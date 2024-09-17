@@ -42,6 +42,7 @@ def authorization_whoami(cert: str, namespace: str,
     log_http_response(resp, log)
     try:
         log.info(json.dumps(resp.json(), indent=1))
+        return resp.json()
     except requests.decoder.JSONDecodeError:
         log.info(resp.text)
 
@@ -57,14 +58,14 @@ def main(args):
     else:
         cert = (args.cert, args.key)
 
-    authorization_whoami(cert, args.namespace, log, args.ip)
+    return authorization_whoami(cert, args.namespace, log, args.ip)
 
 
 @click.command
 @common_options
 def authorization(**kwargs):
     """Prints the results of the whoami endpoint for the provided user."""
-    main(SimpleNamespace(**kwargs))
+    return main(SimpleNamespace(**kwargs))
 
 
 if __name__ == "__main__":

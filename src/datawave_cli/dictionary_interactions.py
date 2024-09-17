@@ -49,6 +49,7 @@ def get_entire_dictionary(cert: str, auths: str, data_types: str, namespace: str
         display_dictionary(fields, log)
     else:
         save_dictionary(file, fields, log)
+    return fields
 
 
 def parse_response(resp: requests.Response) -> dict:
@@ -162,7 +163,8 @@ def main(args):
     else:
         cert = (args.cert, args.key)
 
-    get_entire_dictionary(cert, args.auths, args.data_types, args.namespace, args.output, log=log, use_ip=args.ip)
+    res = get_entire_dictionary(cert, args.auths, args.data_types, args.namespace, args.output, log=log, use_ip=args.ip)
+    return res
 
 
 @click.command
@@ -179,7 +181,7 @@ def dictionary(**kwargs):
 
     If a specific datatype is provided, it will display only the fields for that datatype.
     """
-    main(SimpleNamespace(**kwargs))
+    return main(SimpleNamespace(**kwargs))
 
 
 if __name__ == "__main__":

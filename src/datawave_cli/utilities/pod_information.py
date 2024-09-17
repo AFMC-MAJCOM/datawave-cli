@@ -43,9 +43,9 @@ class PodInformation():
             the namespace.
         """
         try:
-            
+
             pods = self.core_v1.list_namespaced_pod(namespace=self.namespace,
-                                               label_selector=','.join(self.pod_labels)).items
+                                                    label_selector=','.join(self.pod_labels)).items
             self.podname = pods[0].metadata.name
             self.pod_ip = pods[0].status.pod_ip
         except ApiException as e:
