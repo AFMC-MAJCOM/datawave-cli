@@ -401,7 +401,9 @@ def save_query(results: dict, filename: str, decode_raw: bool):
 def main(args):
     query_params = QueryParams(query_name=args.query_name,
                                query=args.query,
-                               auths=args.auths)
+                               auths=args.auths,
+                               begin=args.begin_date,
+                               end=args.end_date)
     log = setup_logger('query_interactions', log_level=args.log_level)
 
     global base_url
@@ -449,6 +451,12 @@ def main(args):
                    + "https://commons.apache.org/proper/commons-jexl/reference/syntax.html")
 @click.option("--query-name", type=str, default="default_query", show_default=True,
               help="The name given to the query in the query request.")
+@click.option("--auths", type=str, required=True,
+              help="A comma-separated list of authorizations to use within the query request.")
+@click.option("-b", "--begin-date", type=str, default="19700101",
+              help="The date to begin a query. ex. YYYYMMDD")
+@click.option("-e", "--end-date", type=str, default="20991212",
+              help="The date to end a query. ex. YYYYMMDD")
 @click.option("--auths", type=str, required=True,
               help="A comma-separated list of authorizations to use within the query request.")
 @click.option("-f", "--filter", type=str, default=None, show_default=True,
