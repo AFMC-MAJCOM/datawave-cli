@@ -454,7 +454,7 @@ def main(args):
 @click.option("--auths", type=str, required=True,
               help="A comma-separated list of authorizations to use within the query request.")
 @click.option("-b", "--begin-date", type=str, default="19700101",
-              help="The date to begin a query. ex. YYYYMMDD")
+              help="The start date for the query, in the format YYYYMMDD (e.g., 19700101).")
 @click.option("-e", "--end-date", type=str, default="20991212",
               help="The date to end a query. ex. YYYYMMDD")
 @click.option("--auths", type=str, required=True,
