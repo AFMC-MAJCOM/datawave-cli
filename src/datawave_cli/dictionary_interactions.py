@@ -14,6 +14,7 @@ from datawave_cli.utilities.utilities import setup_logger, log_http_response
 
 base_url = f"dwv-dictionary.{os.environ.get('DWV_URL', '')}"
 
+
 class DictionaryInteractions(BaseInteractions):
     def __init__(self, args, log: logging.Logger = logging.getLogger('dictionary_interactions')):
         self.log = log
@@ -78,14 +79,13 @@ class DictionaryInteractions(BaseInteractions):
             field_last_updated = field['lastUpdated']
 
             fields.append({"name": field_name, "Data Type": field_data_type, "Forward Indexed": field_forward_indexed,
-                        "Reversed Indexed": field_reverse_indexed, "Types": field_types,
-                        "Tokenized": field_tokenized, "Normalized": field_normalized, "Index Only": field_index_only,
-                        "Descriptions": field_description, "Last Updated": field_last_updated})
+                           "Reversed Indexed": field_reverse_indexed, "Types": field_types,
+                           "Tokenized": field_tokenized, "Normalized": field_normalized, "Index Only": field_index_only,
+                           "Descriptions": field_description, "Last Updated": field_last_updated})
         return fields
 
-
     def display_dictionary(self, fields: list,
-                        log: logging.Logger = logging.getLogger('dictionary_interactions')):
+                           log: logging.Logger = logging.getLogger('dictionary_interactions')):
         """
         Displays a dictionary of all the fields found from the query.
 
@@ -115,7 +115,6 @@ class DictionaryInteractions(BaseInteractions):
             for key in dictionary_keys:
                 row += f"{str(field[key]):{max_lengths[key]}}|"
             log.info(row)
-
 
     def save_dictionary(self, filename: str, fields: list,
                         log: logging.Logger = logging.getLogger('dictionary_interactions')):

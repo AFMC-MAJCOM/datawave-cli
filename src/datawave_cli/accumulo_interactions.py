@@ -16,7 +16,6 @@ class AccumuloInteractions(BaseInteractions):
         self.log = log
         super().__init__(args)
 
-
     def get_pod_ip(self):
         return pods.get_specific_pod(pods.web_datawave_info, self.namespace).pod_ip
 

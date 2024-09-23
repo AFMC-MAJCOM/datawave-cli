@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import sys
 
+
 class BaseInteractions(ABC):
     def __init__(self, args):
         self.namespace = args.namespace
@@ -12,7 +13,7 @@ class BaseInteractions(ABC):
             self.cert = args.cert
         else:
             self.cert = (args.cert, args.key)
-    
+
     def init_base_url(self, args):
         """
         Define the base_url for interacting with datawave accumulo based on arguments
@@ -21,7 +22,7 @@ class BaseInteractions(ABC):
         """
         if (args.localhost):
             self.base_url = "https://localhost:8443"
-        elif(args.ip):
+        elif (args.ip):
             pod_ip = self.get_pod_ip()
             self.base_url = f"https://{pod_ip}:8443"
         else:
@@ -33,7 +34,7 @@ class BaseInteractions(ABC):
             self.log.debug(url)
             self.base_url = f"https://{url}"
         self.log.debug(f"Base URL: {self.base_url}")
-    
+
     @abstractmethod
     def get_pod_ip(self):
         pass

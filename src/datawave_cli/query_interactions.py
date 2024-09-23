@@ -78,7 +78,7 @@ class QueryConnection:
     create_endpoint: str = 'DataWave/Query/EventQuery/create.json'
     quuid: Optional[str] = None
 
-    def __init__(self, base_url:str, cert: str, query_params: QueryParams, log: Logger = None):
+    def __init__(self, base_url: str, cert: str, query_params: QueryParams, log: Logger = None):
         self.base_url = base_url
         self.cert = cert
         self.query_params = query_params
@@ -229,9 +229,9 @@ class QueryInteractions(BaseInteractions):
 
     def perform_query(self, args):
         query_params = QueryParams(query_name=args.query_name,
-                               query=args.query,
-                               auths=args.auths)
-        
+                                   query=args.query,
+                                   auths=args.auths)
+
         events = []
         with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log) as qc:
             for data in qc:
@@ -257,7 +257,7 @@ class QueryInteractions(BaseInteractions):
                 results['html'] = htmlify(args.output, Path(args.output).with_suffix('.html'))
 
         return results
-            
+
     def parse_and_filter_results(self, raw_events: list, *, filter_on: str):
         """Parses datawaves returned events to json format and then filters it if a key is provided.
 
@@ -282,18 +282,17 @@ class QueryInteractions(BaseInteractions):
         filtered = filter_results(parsed, filter_on=filter_on)
         return filtered
 
-
     def parse_results(self, raw_events: dict):
         """Parses datawaves insane return to a more sesnsible json format.
 
         Datawave's return type is kind of insane. It's a dict, one of those keys is `Events` which is a list of events.
-        Each element of that list of events is a dict. Those dicts have a key for `fields` which returns a list of fields.
-        Each field is a dict with a key for `name` and one for `Value`. `Value` is another dict that contains a `value`.
-        That final value is what we actually care about. There's a lot more information in that json that we dont care about
-        so this function pairs that down to just a list of dicts.
+        Each element of that list of events is a dict. Those dicts have a key for `fields` which returns a list of
+        fields. Each field is a dict with a key for `name` and one for `Value`. `Value` is another dict that
+        contains a `value`. That final value is what we actually care about. There's a lot more information in that
+        json that we dont care about so this function pairs that down to just a list of dicts.
 
-        The returned object will simply be a list of events where each event is has the field name as a key and the field
-        value as the value.
+        The returned object will simply be a list of events where each event is has the field name as a key and
+        the field value as the value.
 
         Parameters
         ----------
@@ -323,7 +322,6 @@ class QueryInteractions(BaseInteractions):
             parsed_events.append(event_data)
 
         return parsed_events
-
 
     def filter_results(self, results_in: list, filter_on: str):
         """Filters and returns a set of values based on the provided key.
@@ -357,7 +355,6 @@ class QueryInteractions(BaseInteractions):
 
         return [{key: event.get(key, "Not Found") for key in keys} for event in results_in]
 
-
     def print_query(self, results: dict, decode_raw: bool):
         """Prints the query results to the console.
 
@@ -379,7 +376,6 @@ class QueryInteractions(BaseInteractions):
                 print(f'{name}: {value}')
             print('-' * 10)
         print(f'Query returned: {results["metadata"]["Returned Events"]} events.')
-
 
     def save_query(self, results: dict, filename: str, decode_raw: bool):
         """Saves the query results to the provided file, decoding raw data if requested.
@@ -432,7 +428,6 @@ class QueryInteractions(BaseInteractions):
 
 
 def main(args):
-    
     log = setup_logger('query_interactions', log_level=args.log_level)
     qi = QueryInteractions(args, log)
     return qi.perform_query(args)
