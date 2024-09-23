@@ -27,8 +27,8 @@ class BaseInteractions(ABC):
             self.base_url = f"https://{pod_ip}:8443"
         else:
             # TODO figure out a good default for the url
-            url = f"{args.url}" if args.url != "" else None
-            if url is None:
+            url = args.url
+            if not url:
                 self.log.critical("URL is none, cannot continue.")
                 sys.exit(1)
             self.log.debug(url)
