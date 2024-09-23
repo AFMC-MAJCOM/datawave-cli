@@ -14,13 +14,12 @@ from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
+
+from .base_interactions import BaseInteractions
 from datawave_cli.generate_html import htmlify
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import depends_on, File, common_options
 from datawave_cli.utilities.utilities import setup_logger, log_http_response
-
-
-base_url = f"datawave.{os.environ.get('DWV_URL', '')}"
 
 
 @dataclass
@@ -52,10 +51,8 @@ class QueryConnection:
 
     Parameters
     ----------
-    ip : str
-        The IP address of the server to connect to.
-    port : str
-        The port number of the server to connect to.
+    base_url : str
+        The URL to append before the endpoints.
     cert : str
         The path to the SSL certificate for secure communication.
     query_params : QueryParams
@@ -66,6 +63,8 @@ class QueryConnection:
 
     Attributes
     ----------
+    base_url : str
+        The URL to append before the endpoints.
     cert : str
         The path to the SSL certificate for secure communication.
     query_params : QueryParams
@@ -79,7 +78,8 @@ class QueryConnection:
     create_endpoint: str = 'DataWave/Query/EventQuery/create.json'
     quuid: Optional[str] = None
 
-    def __init__(self, cert: str, query_params: QueryParams, log: Logger = None):
+    def __init__(self, base_url:str, cert: str, query_params: QueryParams, log: Logger = None):
+        self.base_url = base_url
         self.cert = cert
         self.query_params = query_params
         self.results_count = 0
@@ -89,12 +89,6 @@ class QueryConnection:
             self.log = setup_logger(__name__, log_file=f'logs/local/{__name__}_{now}.log', log_level=logging.DEBUG)
         else:
             self.log = log
-
-    @classmethod
-    def from_ip(cls, ip: str, port: str, cert: str, query_params: QueryParams, log: Logger = None):
-        global base_url
-        base_url = f'{ip}:{port}'
-        return cls(cert, query_params, log)
 
     @property
     def next_endpoint(self):
@@ -126,7 +120,7 @@ class QueryConnection:
             If the Datawave `create` endpoint fails with a non-200 response.
         """
         self.log.debug("Inside enter...")
-        request = f'https://{base_url}/{self.create_endpoint}'
+        request = f'{self.base_url}/{self.create_endpoint}'
         self.log.debug(request)
         self.log.info(f'Executing with {self.query_params}')
 
@@ -164,7 +158,7 @@ class QueryConnection:
         If an exception is not handled within the method, it will propagate.
         """
         self.log.debug("Inside exit...")
-        request = f'https://{base_url}/{self.close_endpoint}'
+        request = f'{self.base_url}/{self.close_endpoint}'
         self.log.debug(request)
         requests.get(request, cert=self.cert, verify=False)
         if self.results_count:
@@ -213,7 +207,7 @@ class QueryConnection:
             Note: this is the normal method to stop an iterator.
         """
         self.log.debug("Inside next...")
-        request = f'https://{base_url}/{self.next_endpoint}'
+        request = f'{self.base_url}/{self.next_endpoint}'
         self.log.debug(request)
         next_resp = requests.get(request, cert=self.cert, verify=False)
         log_http_response(next_resp, self.log)
@@ -225,223 +219,223 @@ class QueryConnection:
             raise StopIteration
 
 
-def parse_and_filter_results(raw_events: list, *, filter_on: str):
-    """Parses datawaves returned events to json format and then filters it if a key is provided.
+class QueryInteractions(BaseInteractions):
+    def __init__(self, args, log):
+        self.log = log
+        super().__init__(args)
 
-    Parameters
-    ----------
-    raw_events: list[dict]
-        The JSON object returned from a datawave query to be parsed out
+    def get_pod_ip(self):
+        return pods.get_specific_pod(pods.web_datawave_info, self.namespace).pod_ip
 
-    filter_on: str
-        The key or a comma separated list of keys to filter results on.
+    def perform_query(self, args):
+        query_params = QueryParams(query_name=args.query_name,
+                               query=args.query,
+                               auths=args.auths)
+        
+        events = []
+        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log) as qc:
+            for data in qc:
+                events.extend(self.parse_and_filter_results(data, filter_on=args.filter))
 
-    Returns
-    -------
-    A list of filtered events corresponding to the provided key.
+        # Generate some query level metadata from the results
+        metadata = {}
+        metadata['Query'] = qc.query_params.query
+        metadata['Returned Events'] = qc.results_count
+        metadata['Auths'] = qc.query_params.auths
+        cert = qc.cert[0] if isinstance(qc.cert, tuple) else qc.cert
+        metadata['Cert'] = Path(cert).stem
+        # current ms since epoch
+        metadata['Unix Timestamp(ms)'] = int(datetime.now().timestamp() * 1e3)
 
-    Raises
-    ------
-    KeyError:
-        If the key does not exist in the dataset being filtered.
-    """
-    parsed = parse_results(raw_events)
-    filtered = filter_results(parsed, filter_on=filter_on)
-    return filtered
+        results = {'metadata': metadata, 'events': events}
 
+        if args.output is None:
+            self.print_query(results, args.decode_raw)
+        else:
+            self.save_query(results, args.output, args.decode_raw)
+            if args.html:
+                results['html'] = htmlify(args.output, Path(args.output).with_suffix('.html'))
 
-def parse_results(raw_events: dict):
-    """Parses datawaves insane return to a more sesnsible json format.
+        return results
+            
+    def parse_and_filter_results(self, raw_events: list, *, filter_on: str):
+        """Parses datawaves returned events to json format and then filters it if a key is provided.
 
-    Datawave's return type is kind of insane. It's a dict, one of those keys is `Events` which is a list of events.
-    Each element of that list of events is a dict. Those dicts have a key for `fields` which returns a list of fields.
-    Each field is a dict with a key for `name` and one for `Value`. `Value` is another dict that contains a `value`.
-    That final value is what we actually care about. There's a lot more information in that json that we dont care about
-    so this function pairs that down to just a list of dicts.
+        Parameters
+        ----------
+        raw_events: list[dict]
+            The JSON object returned from a datawave query to be parsed out
 
-    The returned object will simply be a list of events where each event is has the field name as a key and the field
-    value as the value.
+        filter_on: str
+            The key or a comma separated list of keys to filter results on.
 
-    Parameters
-    ----------
-    raw_events: dict
-        The JSON object returned from a datawave query to be parsed out
+        Returns
+        -------
+        A list of filtered events corresponding to the provided key.
 
-    Returns
-    -------
-    parsed_events: list[dict]
-        A list of events where each event is a dict of fields that have been ripped out from the input
-
-    Note
-    ----
-    This does not do anything with the raw parquet binary. It just pulls out that binary. It is up to the caller of
-    this function to decode that.
-    """
-    parsed_events = []
-    for event in raw_events['Events']:
-        event_data = defaultdict(list)
-        for field in event['Fields']:
-            field_name = field['name']
-            field_value = field['Value']['value']
-            event_data[field_name].append(field_value)
-
-        # Convert single-item lists to just the item
-        event_data = {key: (values[0] if len(values) == 1 else values) for key, values in event_data.items()}
-        parsed_events.append(event_data)
-
-    return parsed_events
+        Raises
+        ------
+        KeyError:
+            If the key does not exist in the dataset being filtered.
+        """
+        parsed = self.parse_results(raw_events)
+        filtered = filter_results(parsed, filter_on=filter_on)
+        return filtered
 
 
-def filter_results(results_in: list, filter_on: str):
-    """Filters and returns a set of values based on the provided key.
+    def parse_results(self, raw_events: dict):
+        """Parses datawaves insane return to a more sesnsible json format.
 
-    Args
-    ----
-    results_in: list[dict]
-        The list of events to be filtered down.
+        Datawave's return type is kind of insane. It's a dict, one of those keys is `Events` which is a list of events.
+        Each element of that list of events is a dict. Those dicts have a key for `fields` which returns a list of fields.
+        Each field is a dict with a key for `name` and one for `Value`. `Value` is another dict that contains a `value`.
+        That final value is what we actually care about. There's a lot more information in that json that we dont care about
+        so this function pairs that down to just a list of dicts.
 
-    filter_on: str
-        The key or a comma separated list of keys to filter results on.
+        The returned object will simply be a list of events where each event is has the field name as a key and the field
+        value as the value.
 
-    Returns
-    -------
-    A list of filtered events corresponding to the provided key.
+        Parameters
+        ----------
+        raw_events: dict
+            The JSON object returned from a datawave query to be parsed out
 
-    Raises
-    ------
-    KeyError:
-        If the key does not exist in the dataset being filtered.
-    """
-    if filter_on is None:
-        return results_in
-    keys = filter_on.split(',')
+        Returns
+        -------
+        parsed_events: list[dict]
+            A list of events where each event is a dict of fields that have been ripped out from the input
 
-    all_keys = {key for event in results_in for key in event.keys()}
-    not_found = [key for key in keys if key not in all_keys]
-    if not_found:
-        print(repr(KeyError(f'{not_found} not found in any results!')))
-        sys.exit(1)
+        Note
+        ----
+        This does not do anything with the raw parquet binary. It just pulls out that binary. It is up to the caller of
+        this function to decode that.
+        """
+        parsed_events = []
+        for event in raw_events['Events']:
+            event_data = defaultdict(list)
+            for field in event['Fields']:
+                field_name = field['name']
+                field_value = field['Value']['value']
+                event_data[field_name].append(field_value)
 
-    return [{key: event.get(key, "Not Found") for key in keys} for event in results_in]
+            # Convert single-item lists to just the item
+            event_data = {key: (values[0] if len(values) == 1 else values) for key, values in event_data.items()}
+            parsed_events.append(event_data)
 
-
-def print_query(results: dict, decode_raw: bool):
-    """Prints the query results to the console.
-
-    Parameters
-    ----------
-    results: dict
-        The query results dictionary, expected to have items for `metadata` and `events`.
-    decode_raw: bool
-        Boolean indicating if we should decode the raw data
-    """
-    for event in results['events']:
-        for name, value in event.items():
-            if 'RAWDATA' in name:
-                if decode_raw:
-                    buffer = BytesIO(base64.b64decode(value))
-                    value = pd.read_parquet(buffer)
-                else:
-                    value = 'Contains raw data'
-            print(f'{name}: {value}')
-        print('-' * 10)
-    print(f'Query returned: {results["metadata"]["Returned Events"]} events.')
+        return parsed_events
 
 
-def save_query(results: dict, filename: str, decode_raw: bool):
-    """Saves the query results to the provided file, decoding raw data if requested.
+    def filter_results(self, results_in: list, filter_on: str):
+        """Filters and returns a set of values based on the provided key.
 
-    If `decode_raw` is True, the raw data fields will be decoded and written as parquet files at the same level as
-    the output file.
+        Args
+        ----
+        results_in: list[dict]
+            The list of events to be filtered down.
 
-    Parameters
-    ----------
-    results: dict
-        The query results dictionary, expected to have items for `metadata` and `events.
-    filename: str
-        The filename to write the results to
-    decode_raw: bool
-        Whether to decode the raw values and write parquets.
-    """
-    log = logging.getLogger('query_interactions')
+        filter_on: str
+            The key or a comma separated list of keys to filter results on.
 
-    filepath = Path(filename)
-    print(f'Outputting to {filepath.resolve()}')
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    if filepath.exists():
-        print(f'Existing output file exists. Attempting to rename it.')
-        try:
-            renamed_path = filepath.with_stem(filepath.stem + '_old')
-            filepath.rename(renamed_path)
-        except PermissionError as e:
-            # Some times it gets a permission error and fails to rename it, even if the file is not in use.
-            log.critical('Failed to rename old file! Check that it is not in use or otherwise locked!')
-            raise e
-        print(f'Existing file renamed to {renamed_path}')
+        Returns
+        -------
+        A list of filtered events corresponding to the provided key.
 
-    with open(filename, 'w') as file:
-        json.dump(results, file, indent=2)
+        Raises
+        ------
+        KeyError:
+            If the key does not exist in the dataset being filtered.
+        """
+        if filter_on is None:
+            return results_in
+        keys = filter_on.split(',')
 
-    if decode_raw:
+        all_keys = {key for event in results_in for key in event.keys()}
+        not_found = [key for key in keys if key not in all_keys]
+        if not_found:
+            print(repr(KeyError(f'{not_found} not found in any results!')))
+            sys.exit(1)
+
+        return [{key: event.get(key, "Not Found") for key in keys} for event in results_in]
+
+
+    def print_query(self, results: dict, decode_raw: bool):
+        """Prints the query results to the console.
+
+        Parameters
+        ----------
+        results: dict
+            The query results dictionary, expected to have items for `metadata` and `events`.
+        decode_raw: bool
+            Boolean indicating if we should decode the raw data
+        """
         for event in results['events']:
-            for key, value in event.items():
-                if 'RAWDATA' in key:
-                    raw_bytes = base64.b64decode(value)
-                    orig_file = event['ORIG_FILE']
-                    if isinstance(orig_file, list):
-                        orig_file = orig_file[0]
-                    parq_dir = orig_file.split('.json', 1)[0]
-                    parq_name = key.split('_', 1)[1]
-                    pq_file = Path(filename).parent.joinpath('rawdata', parq_dir, f'{parq_name}.parquet')
-                    pq_file.parent.mkdir(parents=True, exist_ok=True)
-                    with open(pq_file, 'wb') as pq_fh:
-                        pq_fh.write(raw_bytes)
+            for name, value in event.items():
+                if 'RAWDATA' in name:
+                    if decode_raw:
+                        buffer = BytesIO(base64.b64decode(value))
+                        value = pd.read_parquet(buffer)
+                    else:
+                        value = 'Contains raw data'
+                print(f'{name}: {value}')
+            print('-' * 10)
+        print(f'Query returned: {results["metadata"]["Returned Events"]} events.')
+
+
+    def save_query(self, results: dict, filename: str, decode_raw: bool):
+        """Saves the query results to the provided file, decoding raw data if requested.
+
+        If `decode_raw` is True, the raw data fields will be decoded and written as parquet files at the same level as
+        the output file.
+
+        Parameters
+        ----------
+        results: dict
+            The query results dictionary, expected to have items for `metadata` and `events.
+        filename: str
+            The filename to write the results to
+        decode_raw: bool
+            Whether to decode the raw values and write parquets.
+        """
+        log = logging.getLogger('query_interactions')
+
+        filepath = Path(filename)
+        print(f'Outputting to {filepath.resolve()}')
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        if filepath.exists():
+            print(f'Existing output file exists. Attempting to rename it.')
+            try:
+                renamed_path = filepath.with_stem(filepath.stem + '_old')
+                filepath.rename(renamed_path)
+            except PermissionError as e:
+                # Some times it gets a permission error and fails to rename it, even if the file is not in use.
+                log.critical('Failed to rename old file! Check that it is not in use or otherwise locked!')
+                raise e
+            print(f'Existing file renamed to {renamed_path}')
+
+        with open(filename, 'w') as file:
+            json.dump(results, file, indent=2)
+
+        if decode_raw:
+            for event in results['events']:
+                for key, value in event.items():
+                    if 'RAWDATA' in key:
+                        raw_bytes = base64.b64decode(value)
+                        orig_file = event['ORIG_FILE']
+                        if isinstance(orig_file, list):
+                            orig_file = orig_file[0]
+                        parq_dir = orig_file.split('.json', 1)[0]
+                        parq_name = key.split('_', 1)[1]
+                        pq_file = Path(filename).parent.joinpath('rawdata', parq_dir, f'{parq_name}.parquet')
+                        pq_file.parent.mkdir(parents=True, exist_ok=True)
+                        with open(pq_file, 'wb') as pq_fh:
+                            pq_fh.write(raw_bytes)
 
 
 def main(args):
-    query_params = QueryParams(query_name=args.query_name,
-                               query=args.query,
-                               auths=args.auths,
-                               begin=args.begin_date,
-                               end=args.end_date)
+    
     log = setup_logger('query_interactions', log_level=args.log_level)
-
-    global base_url
-    base_url = f"datawave.{args.url}"
-
-    if args.key is None:
-        cert = args.cert
-    else:
-        cert = (args.cert, args.key)
-
-    events = []
-    connection = (QueryConnection.from_ip(pods.get_specific_pod(pods.web_datawave_info, args.namespace).pod_ip, '8443',
-                                          cert, query_params, log) if args.ip
-                  else QueryConnection(cert, query_params, log))
-    with connection as qc:
-        for data in qc:
-            events.extend(parse_and_filter_results(data, filter_on=args.filter))
-
-    # Generate some query level metadata from the results
-    metadata = {}
-    metadata['Query'] = qc.query_params.query
-    metadata['Returned Events'] = qc.results_count
-    metadata['Auths'] = qc.query_params.auths
-    cert = qc.cert[0] if isinstance(qc.cert, tuple) else qc.cert
-    metadata['Cert'] = Path(cert).stem
-    # current ms since epoch
-    metadata['Unix Timestamp(ms)'] = int(datetime.now().timestamp() * 1e3)
-
-    results = {'metadata': metadata, 'events': events}
-
-    if args.output is None:
-        print_query(results, args.decode_raw)
-    else:
-        save_query(results, args.output, args.decode_raw)
-        if args.html:
-            results['html'] = htmlify(args.output, Path(args.output).with_suffix('.html'))
-
-    return results
+    qi = QueryInteractions(args, log)
+    return qi.perform_query(args)
 
 
 @click.command
