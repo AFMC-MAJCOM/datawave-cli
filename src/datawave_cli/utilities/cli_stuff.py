@@ -43,6 +43,8 @@ class File(click.Path):
 
 def common_options(f):
     """A decorator for adding options common to most submodules"""
+    f = click.option("-l", "--localhost", is_flag=True, required=False,
+                     help="Force usage of localhost within urls. This will override usage of the IP if specified.")(f)
     f = click.option("-u", "--url", type=str, envvar='DWV_URL', default='', show_default=True,
                      help='The URL for the datawave DNS. If a value is passed it will use that value. '
                      + 'Otherwise, it will attempt to read the environment variable `DWV_URL`. If that variable has '
