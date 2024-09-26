@@ -124,7 +124,7 @@ class QueryConnection:
         self.log.debug(request)
         self.log.info(f'Executing with {self.query_params}')
 
-        resp = requests.post(request, data=self.query_params.get(), cert=self.cert, verify=False)
+        resp = requests.post(request, data=self.query_params.get(), cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         if (resp.status_code == 200):
             self.quuid = resp.json()['Result']
@@ -160,7 +160,7 @@ class QueryConnection:
         self.log.debug("Inside exit...")
         request = f'{self.base_url}/{self.close_endpoint}'
         self.log.debug(request)
-        requests.get(request, cert=self.cert, verify=False)
+        requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         if self.results_count:
             self.log.info(f'Total results retrieved: {self.results_count}')
         else:
@@ -209,7 +209,7 @@ class QueryConnection:
         self.log.debug("Inside next...")
         request = f'{self.base_url}/{self.next_endpoint}'
         self.log.debug(request)
-        next_resp = requests.get(request, cert=self.cert, verify=False)
+        next_resp = requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(next_resp, self.log)
         if (next_resp.status_code == 200):
             res = next_resp.json()

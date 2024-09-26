@@ -40,7 +40,7 @@ class DictionaryInteractions(BaseInteractions):
         request = f"{self.base_url}/dictionary/data/v1/"
         data = {'auths': auths,
                 'dataTypeFilters': data_types}
-        resp = requests.get(request, data=data, cert=self.cert, verify=False)
+        resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         if resp.status_code == 200:
             fields = self.parse_response(resp)
