@@ -35,7 +35,7 @@ class BaseInteractions(ABC):
             self.log.debug(url)
             self.base_url = f"https://{url}"
         self.log.debug(f"Base URL: {self.base_url}")
-    
+
     def init_headers(self, args):
         self.headers = {k: v for k, v in args.header}
         self.log.debug(f"Headers Passed in: {self.headers}")
