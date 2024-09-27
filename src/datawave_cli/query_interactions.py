@@ -234,7 +234,8 @@ class QueryInteractions(BaseInteractions):
                                    auths=args.auths)
 
         events = []
-        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log, headers=self.headers) as qc:
+        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log,
+                             headers=self.headers) as qc:
             for data in qc:
                 events.extend(self.parse_and_filter_results(data, filter_on=args.filter))
 
