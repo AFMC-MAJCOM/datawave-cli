@@ -78,10 +78,11 @@ class QueryConnection:
     create_endpoint: str = 'DataWave/Query/EventQuery/create.json'
     quuid: Optional[str] = None
 
-    def __init__(self, base_url: str, cert: str, query_params: QueryParams, log: Logger = None):
+    def __init__(self, base_url: str, cert: str, query_params: QueryParams, headers: dict = None, log: Logger = None):
         self.base_url = base_url
         self.cert = cert
         self.query_params = query_params
+        self.headers = headers
         self.results_count = 0
 
         if log is None:
@@ -233,7 +234,7 @@ class QueryInteractions(BaseInteractions):
                                    auths=args.auths)
 
         events = []
-        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log) as qc:
+        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log, headers=self.headers) as qc:
             for data in qc:
                 events.extend(self.parse_and_filter_results(data, filter_on=args.filter))
 
@@ -279,7 +280,7 @@ class QueryInteractions(BaseInteractions):
             If the key does not exist in the dataset being filtered.
         """
         parsed = self.parse_results(raw_events)
-        filtered = filter_results(parsed, filter_on=filter_on)
+        filtered = self.filter_results(parsed, filter_on=filter_on)
         return filtered
 
     def parse_results(self, raw_events: dict):
