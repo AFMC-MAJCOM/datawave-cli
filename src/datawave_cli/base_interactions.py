@@ -7,6 +7,7 @@ class BaseInteractions(ABC):
         self.namespace = args.namespace
         self.init_base_url(args)
         self.init_cert(args)
+        self.init_headers(args)
 
     def init_cert(self, args):
         if args.key is None:
@@ -34,6 +35,10 @@ class BaseInteractions(ABC):
             self.log.debug(url)
             self.base_url = f"https://{url}"
         self.log.debug(f"Base URL: {self.base_url}")
+
+    def init_headers(self, args):
+        self.headers = {k: v for k, v in args.header}
+        self.log.debug(f"Headers Passed in: {self.headers}")
 
     @abstractmethod
     def get_pod_ip(self):

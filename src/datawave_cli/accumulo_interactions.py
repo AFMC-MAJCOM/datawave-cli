@@ -25,7 +25,7 @@ class AccumuloInteractions(BaseInteractions):
         """
         self.log.info("Reloading the accumulo cache...")
         request = f"{self.base_url}/DataWave/Common/AccumuloTableCache/reload/datawave.metadata"
-        resp = requests.get(request, cert=self.cert, verify=False)
+        resp = requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         self.log.info("Successfully requested a reload.")
 
@@ -39,7 +39,7 @@ class AccumuloInteractions(BaseInteractions):
         """
         self.log.info("Viewing the accumulo cache...")
         request = f"{self.base_url}/DataWave/Common/AccumuloTableCache/"
-        resp = requests.get(request, cert=self.cert, verify=False)
+        resp = requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         return resp.text
 

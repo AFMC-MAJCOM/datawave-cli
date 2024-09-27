@@ -28,7 +28,7 @@ class AuthorizationInteractions(BaseInteractions):
         """
         self.log.info("Getting the authorization details for my cert from DW...")
         request = f"{self.base_url}/authorization/v1/whoami"
-        resp = requests.get(request, cert=self.cert, verify=False)
+        resp = requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         try:
             self.log.info(json.dumps(resp.json(), indent=1))
