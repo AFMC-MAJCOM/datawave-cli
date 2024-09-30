@@ -78,10 +78,11 @@ class QueryConnection:
     create_endpoint: str = 'DataWave/Query/EventQuery/create.json'
     quuid: Optional[str] = None
 
-    def __init__(self, base_url: str, cert: str, query_params: QueryParams, log: Logger = None):
+    def __init__(self, base_url: str, cert: str, query_params: QueryParams, headers: dict = None, log: Logger = None):
         self.base_url = base_url
         self.cert = cert
         self.query_params = query_params
+        self.headers = headers
         self.results_count = 0
 
         if log is None:
@@ -124,7 +125,7 @@ class QueryConnection:
         self.log.debug(request)
         self.log.info(f'Executing with {self.query_params}')
 
-        resp = requests.post(request, data=self.query_params.get(), cert=self.cert, verify=False)
+        resp = requests.post(request, data=self.query_params.get(), cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         if (resp.status_code == 200):
             self.quuid = resp.json()['Result']
@@ -160,7 +161,7 @@ class QueryConnection:
         self.log.debug("Inside exit...")
         request = f'{self.base_url}/{self.close_endpoint}'
         self.log.debug(request)
-        requests.get(request, cert=self.cert, verify=False)
+        requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         if self.results_count:
             self.log.info(f'Total results retrieved: {self.results_count}')
         else:
@@ -209,7 +210,7 @@ class QueryConnection:
         self.log.debug("Inside next...")
         request = f'{self.base_url}/{self.next_endpoint}'
         self.log.debug(request)
-        next_resp = requests.get(request, cert=self.cert, verify=False)
+        next_resp = requests.get(request, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(next_resp, self.log)
         if (next_resp.status_code == 200):
             res = next_resp.json()
@@ -233,7 +234,8 @@ class QueryInteractions(BaseInteractions):
                                    auths=args.auths)
 
         events = []
-        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log) as qc:
+        with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log,
+                             headers=self.headers) as qc:
             for data in qc:
                 events.extend(self.parse_and_filter_results(data, filter_on=args.filter))
 

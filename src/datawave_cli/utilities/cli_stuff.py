@@ -43,6 +43,8 @@ class File(click.Path):
 
 def common_options(f):
     """A decorator for adding options common to most submodules"""
+    f = click.option("-H", "--header", type=(str, str), required=False, multiple=True,
+                     help="Provide HTTP header options to be included in the HTTP requests.")(f)
     f = click.option("-l", "--localhost", is_flag=True, required=False,
                      help="Force usage of localhost within urls. This will override usage of the IP if specified.")(f)
     f = click.option("-u", "--url", type=str, envvar='DWV_URL', default='', show_default=True,
