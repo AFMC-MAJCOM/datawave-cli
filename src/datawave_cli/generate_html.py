@@ -80,7 +80,7 @@ def gen_html(headers: set, events: list, metadata: dict):
     return html_output
 
 
-def htmlify(input_file: os.PathLike | str, out_file: str = 'resources/output.html'):
+def htmlify(input_file: os.PathLike | str):
     """Wrapper for the htmlification process.
 
     This will take the output file of a datawave_cli query and output an html file with a formatted table of events.
