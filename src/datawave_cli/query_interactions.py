@@ -254,7 +254,7 @@ class QueryInteractions(BaseInteractions):
         else:
             self.save_query(results, args.output, args.decode_raw)
             if args.html:
-                results['html'] = htmlify(args.output, Path(args.output).with_suffix('.html'))
+                results['html'] = htmlify(args.output)
 
         return results
 
@@ -279,7 +279,7 @@ class QueryInteractions(BaseInteractions):
             If the key does not exist in the dataset being filtered.
         """
         parsed = self.parse_results(raw_events)
-        filtered = filter_results(parsed, filter_on=filter_on)
+        filtered = self.filter_results(parsed, filter_on=filter_on)
         return filtered
 
     def parse_results(self, raw_events: dict):
@@ -321,7 +321,12 @@ class QueryInteractions(BaseInteractions):
             event_data = {key: (values[0] if len(values) == 1 else values) for key, values in event_data.items()}
             parsed_events.append(event_data)
 
-        return parsed_events
+        # There are no guarantees to the order of data returned by datawave.
+        # For consistency we are just going to iterate over all events and order them based on the first's order
+        desired_order = parsed_events[0].keys()
+        ordered_events = [{key: event[key] for key in desired_order} for event in parsed_events]
+
+        return ordered_events
 
     def filter_results(self, results_in: list, filter_on: str):
         """Filters and returns a set of values based on the provided key.
