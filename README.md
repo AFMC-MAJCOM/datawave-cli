@@ -17,14 +17,18 @@ The following is a list and brief description of each subcommand:
 * `datawave ingest`: Interacts with the ingest portion of Datawave. It ingests a file if one is provided; otherwise, it displays current ingest jobs.
 * `datawave query`: Simplifies the query process with Datawave.
 
-### Configuring Host and IP
-By default, all commands will target an empty hostname and fail. This can be overridden in two ways:
+### Configuring Host, IP, and Localhost
+By default, all commands will target an empty hostname and fail. This can be overridden in the following ways:
+
+1) Set the environment variable `DWV_URL` to always use a custom hostname. Unsetting this reverts to the default behavior.
 1) Use the `-u` or `--url` option to specify a different hostname for that specific run.
-2) Set the environment variable `DWV_URL` to always use a custom hostname. Unsetting this reverts to the default behavior.
+1) Use the `-i` or `--ip` flag to specify an IP address instead of a hostname. This instructs the tool to locate the IP based on Kubernetes pod information for the relevant service.
+    - If necessary, specify the namespace using the `-n` or `--namespace` option. If `-n` is omitted, the tool will attempt to retrieve the namespace from the environment variable `DWV_NAMESPACE`. If neither the option nor the environment variable is provided, the namespace defaults to `default`.
+1) Use the `-l` or `--localhost` option to target the local machine (localhost). This option overrides any URL or IP settings, making the tool connect to `localhost` (127.0.0.1).
 
-To use an IP address (e.g., if DNS is unavailable), the `-i` or `--ip` flag can be used. This instructs the tool to locate the IP based on Kubernetes pod information for the relevant service. In this case, it may also be necessary to specify the namespace using the `-n` or `--namespace` option. If `-n` is omitted, the tool will attempt to retrieve the namespace from the environment variable `DWV_NAMESPACE`. If neither the option nor the environment variable is provided, the namespace defaults to `default`.
-
-**Note:** When using the `--ip` option, ensure that the Kubernetes configuration (`kubeconfig`) is properly set up and points to the correct cluster. Without a valid and properly configured `kubeconfig`, the tool will be unable to retrieve the necessary pod information for resolving the IP address.
+**Notes:**
+- When using the `--ip` option, ensure that the Kubernetes configuration (`kubeconfig`) is properly set up and points to the correct cluster. Without a valid and properly configured `kubeconfig`, the tool will be unable to retrieve the necessary pod information for resolving the IP address.
+- The `-l` / `--localhost` option is ideal for local testing and will bypass Kubernetes or DNS resolution altogether.
 
 ## Development
 #### PowerShell
