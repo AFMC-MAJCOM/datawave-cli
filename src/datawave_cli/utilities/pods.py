@@ -9,9 +9,9 @@ List of pods where we have specific interactions
 ingest_info = {"labels": ['app.kubernetes.io/component=ingest'], "pod_logs": '/srv/logs/ingest'}
 yarn_rm_info = {"labels": ['component=yarn-rm'], "pod_logs": ''}
 hdfs_nn_info = {"labels": ['component=hdfs-nn'], "pod_logs": ''}
-web_datawave_info = {"labels": ['application=dwv-web-datawave'], "pod_logs": ''}
-web_dictionary_info = {"labels": ['application=dwv-web-dictionary'], "pod_logs": ''}
-web_authorization_info = {"labels": ['application=dwv-web-authorization'], "pod_logs": ''}
+web_datawave_info = {"labels": ['application=datawave-monolith'], "pod_logs": ''}
+web_dictionary_info = {"labels": ['application=dictionary'], "pod_logs": ''}
+web_authorization_info = {"labels": ['application=authorization'], "pod_logs": ''}
 
 
 def get_pod(labels: list, pod_logs: str, namespace: str):

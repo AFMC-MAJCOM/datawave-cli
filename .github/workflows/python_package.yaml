@@ -3,15 +3,18 @@ name: Package
 on: [push]
 
 jobs:
+  check-version:
+    uses: AFMC-MAJCOM/ci_python/.github/workflows/version_check.yaml@main
   build:
     runs-on: ubuntu-latest
+    needs: check-version
     strategy:
       matrix:
         python-version: ["3.11"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -26,3 +29,25 @@ jobs:
         python3 -m pip install --upgrade build
         python3 -m build
         ls dist
+    - uses: actions/upload-artifact@v4
+      with:
+        name: datawave-cli-wheel
+        path: dist/*.whl
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/heads/main')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: datawave-cli-wheel
+      - name: get version
+        run: |
+          echo "VERSION=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")" >> $GITHUB_ENV
+      - name: Create a new Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ env.VERSION }}
+          files: "*.whl"
+          tag_name: '${{ env.VERSION}}'
