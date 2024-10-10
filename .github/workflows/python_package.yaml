@@ -50,3 +50,4 @@ jobs:
         with:
           name: test
           files: "*.whl"
+          tag_name: 'test'
