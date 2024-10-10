@@ -46,7 +46,7 @@ jobs:
           echo "VERSION=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")" >> $GITHUB_ENV
       - name: Create a new Release
         uses: softprops/action-gh-release@v2
-        # if: startsWith(github.ref, 'refs/heads/main')
+        if: startsWith(github.ref, 'refs/heads/main')
         with:
           name: ${{ env.VERSION }}
           files: "*.whl"
