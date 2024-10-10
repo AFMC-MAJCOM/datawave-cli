@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: check-version
-      uses: AFMC-MAJCOM/ci_python/.github/workflows/version_check.yaml
+      uses: AFMC-MAJCOM/ci_python/.github/workflows/version_check.yaml@main
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
