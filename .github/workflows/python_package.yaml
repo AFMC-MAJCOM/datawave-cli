@@ -41,13 +41,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: datawave-cli-wheel
-      - name: test
+      - name: get version
         run: |
-          ls
+          echo "VERSION=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")" >> $GITHUB_ENV
       - name: Create a new Release
         uses: softprops/action-gh-release@v2
         # if: startsWith(github.ref, 'refs/heads/main')
         with:
-          name: test
+          name: ${{ env.VERSION }}
           files: "*.whl"
-          tag_name: 'test'
+          tag_name: '${{ env.VERSION}}'
