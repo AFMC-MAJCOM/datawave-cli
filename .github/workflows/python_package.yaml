@@ -26,3 +26,7 @@ jobs:
         python3 -m pip install --upgrade build
         python3 -m build
         ls dist
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist/
