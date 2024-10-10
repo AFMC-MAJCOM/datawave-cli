@@ -31,5 +31,22 @@ jobs:
         ls dist
     - uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: dist/
+        name: Datawave CLI Python Wheel
+        path: dist/*.whl
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Datawave CLI Python Wheel
+      - name: test
+        run: |
+          ls dist
+      # - name: Create a new Release
+      #   uses: softprops/action-gh-release@v2
+      #   if: startsWith(github.ref, 'refs/heads/main')
+      #   with:
+      #     name: test
+      #     files: dist/*.whl
