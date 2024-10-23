@@ -48,4 +48,4 @@ However, if building in WSL is necessary, use the following command from powersh
 This will create the `dist/*.whl` file, which can then be installed manually. Note that the `install.sh` script can automate the uninstall and reinstall steps but does not handle the build process.
 
 #### Versioning
-When changes are made, increment the version manually in both the `pyproject.toml` and `install.sh` scripts. Version updates should be done once per story, rather than with every individual push.
+When changes are made, increment the version manually in the `pyproject.toml` script. Version updates should be done once per story, rather than with every individual push.

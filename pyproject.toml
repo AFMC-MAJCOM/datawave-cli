@@ -4,15 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datawave_cli"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
     "requests",
     "kubernetes",
     "pandas",
     "argparse",
-    "pytest"
 ]
 
+[project.optional-dependencies]
+pytest = [
+    "pytest",
+    "pytest-mock"
+]
 
 [project.scripts]
 datawave = "datawave_cli.main:main"
