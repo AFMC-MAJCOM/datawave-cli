@@ -4,7 +4,6 @@ import math
 import logging
 
 import requests
-import pytest
 from pathlib import Path
 from typing import Optional
 from logging import Logger
