@@ -34,6 +34,11 @@ class DictionaryInteractions(BaseInteractions):
         file: str
             the name of where to save output
 
+        Returns
+        -------
+        fields: dict
+            A dictionary of the results of the parsed dictionary endpoint
+
         Raises
         ------
         RuntimeError:
@@ -43,6 +48,7 @@ class DictionaryInteractions(BaseInteractions):
         request = f"{self.base_url}/dictionary/data/v1/"
         data = {'auths': auths,
                 'dataTypeFilters': data_types}
+        self.log.debug(f'Hitting {request} with {data} and {self.headers}')
         resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
         log_http_response(resp, self.log)
         fields = {}
