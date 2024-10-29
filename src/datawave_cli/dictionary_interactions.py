@@ -6,24 +6,23 @@ from typing import Callable
 
 import click
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, JSONDecodeError, Timeout
 
-from .base_interactions import BaseInteractions
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import File, common_options
 from datawave_cli.utilities.utilities import setup_logger, log_http_response
 
 
 class DictionaryInteractions(BaseInteractions):
+    pod_info = pods.web_dictionary_info
+
     def __init__(self, args, log: logging.Logger = logging.getLogger('dictionary_interactions')):
         self.log = log
         super().__init__(args)
 
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_dictionary_info, self.namespace).pod_ip
-
-    def get_dictionary(self, auths: str, data_types: str, filename: str):
-        """Display or save the dictionary of datawave for the provided data types.
+    def get_dictionary(self, auths: str, data_types: str):
+        """REtrieves the dictionary from datawave for the provided data types.
 
         Parameters
         ----------
@@ -31,13 +30,10 @@ class DictionaryInteractions(BaseInteractions):
             comma delimited string containing all the auths to pull the dictionary with
         data_types: str
             comma delimited string comtaining the data types to pull the dictionary for
-        file: str
-            the name of where to save output
 
         Returns
         -------
-        fields: dict
-            A dictionary of the results of the parsed dictionary endpoint
+        A dictionary containing the json of the response from datawave
 
         Raises
         ------
@@ -49,37 +45,30 @@ class DictionaryInteractions(BaseInteractions):
         data = {'auths': auths,
                 'dataTypeFilters': data_types}
         self.log.debug(f'Hitting {request} with {data} and {self.headers}')
-        resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
-        log_http_response(resp, self.log)
-        fields = {}
         try:
+            resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
+            log_http_response(resp, self.log)
             resp.raise_for_status()
-            fields = self.parse_response(resp)
-            if filename is None:
-                self.output_dictionary(self.log.info, fields)
-            else:
-                with open(filename, 'a') as file:
-                    writer = partial(print, file=file)
-                    self.output_dictionary(writer, fields)
-        except HTTPError as e:
-            self.log.error(f'Invalid response from dictionary request: {e}')
-            raise RuntimeError from e
-        return fields
+            return resp.json()
+        except (HTTPError, JSONDecodeError, Timeout) as e:
+            msg = 'Invalid response from dictionary request'
+            self.log.error(f'{msg}: {e}')
+            raise RuntimeError(msg) from e
 
-    def parse_response(self, resp: requests.Response) -> dict:
+    def parse_response(self, resp: dict) -> dict:
         """Rips apart the HTTP Response content and pulls of the information we desire.
 
         Parameters
         ----------
-        resp: requests.Response
-            the HTTP Response object.
+        resp: dict
+            The json of the response object.
 
         Returns
         -------
-        A dictionary containing all the information parsed out of the HTTP JSON response.
+        A list of dictionaries containing all the information parsed out of the response.
         """
         fields = []
-        for field in resp.json()['MetadataFields']:
+        for field in resp['MetadataFields']:
             field_name = field['fieldName']
             field_data_type = field['dataType']
             field_forward_indexed = field['forwardIndexed']
@@ -104,8 +93,6 @@ class DictionaryInteractions(BaseInteractions):
         ----------
         fields: list
             the fields returned from the filter function.
-        log: logging.Logging
-            The logger object.
 
         Returns
         -------
@@ -165,7 +152,15 @@ class DictionaryInteractions(BaseInteractions):
 def main(args):
     log = setup_logger("dictionary_interactions", log_level=args.log_level)
     di = DictionaryInteractions(args, log)
-    return di.get_entire_dictionary(args.auths, args.data_types, args.output)
+    resp = di.get_dictionary(args.auths, args.data_types)
+    fields = di.parse_response(resp)
+    if args.output is None:
+        di.output_dictionary(di.log.info, fields)
+    else:
+        with open(args.output, 'w') as file:
+            writer = partial(print, file=file)
+            di.output_dictionary(writer, fields)
+    return fields
 
 
 @click.command

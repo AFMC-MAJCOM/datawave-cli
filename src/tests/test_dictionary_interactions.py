@@ -2,7 +2,10 @@ import json
 import pytest
 from pathlib import Path
 from types import SimpleNamespace
-from datawave_cli.dictionary_interactions import DictionaryInteractions
+
+from requests.exceptions import HTTPError, JSONDecodeError, Timeout
+
+from datawave_cli.dictionary_interactions import DictionaryInteractions, main
 
 
 @pytest.fixture
@@ -16,7 +19,9 @@ def mock_args():
         header=[("Authorization", "Bearer fake_token")],
         namespace="test_namespace",
         log_level="INFO",
-        view=False
+        view=False,
+        auths='fake_auths',
+        data_types='fake_type'
     )
     return args
 
@@ -34,68 +39,14 @@ def load_test_data(which):
         return json.load(file)
 
 
-def test_get_pod_ip(dictionary_interactions, mocker):
-    """Test that get_pod_ip grabs from the correct pod"""
-    mock_pods = mocker.patch('datawave_cli.dictionary_interactions.pods')
-
-    mock_pods.get_specific_pod.return_value.pod_ip = "127.0.0.1"
-
-    pod_ip = dictionary_interactions.get_pod_ip()
-
-    mock_pods.get_specific_pod.assert_called_once_with(mock_pods.web_dictionary_info, dictionary_interactions.namespace)
-    assert pod_ip == "127.0.0.1"
-
-
-@pytest.mark.parametrize(
-    "file_provided",
-    [
-        ('output_file'),
-        (None),
-    ],
-    ids=["Save to File", "Display in Log"]
-)
-def test_get_dictionary(dictionary_interactions, mocker, file_provided):
-    """Test that get_dictionary either saves to file or displays data based on file argument"""
-
+def test_get_dictionary(dictionary_interactions, mocker):
+    """Test that get_dictionary correctly queries datawave"""
     mock_requests_get = mocker.patch('requests.get')
     mock_response = mocker.Mock(status_code=200)
-    mock_response.json.return_value = {
-        'MetadataFields': [
-            {
-                'fieldName': 'field1',
-                'dataType': 'string',
-                'forwardIndexed': True,
-                'reverseIndexed': False,
-                'Types': 'text',
-                'Descriptions': 'Test field',
-                'indexOnly': False,
-                'normalized': True,
-                'tokenized': True,
-                'lastUpdated': '2023-01-01'
-            }
-        ]
-    }
+    mock_response.json.return_value = 'Mock Json Response'
     mock_requests_get.return_value = mock_response
 
-    mock_parse_response = mocker.patch.object(dictionary_interactions, 'parse_response', return_value=['parsed_data'])
-
-    mock_output_dictionary = mocker.patch.object(dictionary_interactions, 'output_dictionary')
-
-    if file_provided:
-        mock_open = mocker.mock_open()
-        mocker.patch("builtins.open", mock_open)
-        mock_partial_writer = mocker.Mock()
-        mock_partial = mocker.patch('datawave_cli.dictionary_interactions.partial', return_value=mock_partial_writer)
-
-        dictionary_interactions.get_dictionary('auths', 'types', file_provided)
-
-        mock_open.assert_called_once_with(file_provided, 'a')
-
-        mock_partial.assert_called_once_with(print, file=mock_open())
-        mock_output_dictionary.assert_called_once_with(mock_partial_writer, ['parsed_data'])
-    else:
-        dictionary_interactions.get_dictionary('auths', 'types', None)
-        mock_output_dictionary.assert_called_once_with(dictionary_interactions.log.info, ['parsed_data'])
+    resp = dictionary_interactions.get_dictionary('auths', 'types')
 
     mock_requests_get.assert_called_once_with(
         f"{dictionary_interactions.base_url}/dictionary/data/v1/",
@@ -104,14 +55,52 @@ def test_get_dictionary(dictionary_interactions, mocker, file_provided):
         headers=dictionary_interactions.headers,
         verify=False
     )
+    assert resp == 'Mock Json Response'
 
-    mock_parse_response.assert_called_once_with(mock_response)
+@pytest.mark.parametrize(
+    "mock_response_status, mock_exception",
+    [
+        (200, JSONDecodeError("Expecting value", "doc", 0)),
+        (None, Timeout("The request timed out")),
+        (403, HTTPError("403 Client Error: Forbidden for url")),
+        (500, HTTPError("500 Server Error: Internal Server Error for url")),
+    ],
+    ids=["JSONDecodeError", "Timeout", "HTTPError_403", "HTTPError_500"]
+)
+def test_get_dictionary_errors(dictionary_interactions, mocker, mock_response_status, mock_exception):
+    """Test get_dictionary with various error responses."""
+    mock_requests_get = mocker.patch('requests.get')
+    mocker.patch('datawave_cli.dictionary_interactions.log_http_response')
+
+    mock_response = mocker.Mock()
+    if mock_response_status:
+        mock_response.status_code = mock_response_status
+
+    if isinstance(mock_exception, JSONDecodeError):
+        mock_response.json.side_effect = mock_exception
+    elif isinstance(mock_exception, HTTPError):
+        mock_response.raise_for_status.side_effect = mock_exception
+    elif isinstance(mock_exception, Timeout):
+        mock_requests_get.side_effect = mock_exception
+
+    mock_requests_get.return_value = mock_response
+
+    with pytest.raises(RuntimeError, match="Invalid response from dictionary request"):
+        dictionary_interactions.get_dictionary('auths', 'types')
+
+    if not isinstance(mock_exception, Timeout):
+        mock_requests_get.assert_called_once_with(
+            f"{dictionary_interactions.base_url}/dictionary/data/v1/",
+            data={'auths': 'auths', 'dataTypeFilters': 'types'},
+            cert=dictionary_interactions.cert,
+            headers=dictionary_interactions.headers,
+            verify=False
+        )
 
 
 def test_parse_response(dictionary_interactions, mocker):
     """Test that parse_response correctly parses the dictionary fields"""
-    mock_response = mocker.Mock()
-    mock_response.json.return_value = {
+    mock_response = {
         'MetadataFields': [
             {
                 'fieldName': 'field1',
@@ -228,3 +217,48 @@ def test_output_dictionary(dictionary_interactions, mocker, fields, expected_hea
         mocker.call(expected_row_split),
         *[mocker.call(row) for row in expected_rows]
     ], any_order=False)
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        ('output_file'),
+        (None),
+    ],
+    ids=["Save to File", "Display in Log"]
+)
+def test_main_routing(mock_args, output, mocker):
+    mock_args.output = output
+    mock_setup_logger = mocker.patch('datawave_cli.dictionary_interactions.setup_logger',
+                                     return_value=mocker.Mock())
+    mock_di = mocker.Mock()
+    mock_dictionary_interactions = mocker.patch('datawave_cli.dictionary_interactions.DictionaryInteractions',
+                                                return_value=mock_di)
+    mock_get_dictionary = mocker.patch.object(mock_di, 'get_dictionary',
+                                              return_value={'Mocked': 'json', 'response': 'thing'})
+    mock_parse_response = mocker.patch.object(mock_di, 'parse_response',
+                                              return_value=[{'Mocked': 'Fields'}])
+    mock_output_dictionary = mocker.patch.object(mock_di, 'output_dictionary')
+
+    if output:
+        mock_open = mocker.mock_open()
+        mocker.patch("builtins.open", mock_open)
+        mock_partial_writer = mocker.Mock()
+        mock_partial = mocker.patch('datawave_cli.dictionary_interactions.partial', return_value=mock_partial_writer)
+
+    fields = main(mock_args)
+
+    mock_setup_logger.assert_called_once_with('dictionary_interactions', log_level=mock_args.log_level)
+    mock_dictionary_interactions.assert_called_once_with(mock_args, mock_setup_logger.return_value)
+    mock_get_dictionary.assert_called_once_with(mock_args.auths, mock_args.data_types)
+    mock_parse_response.assert_called_once_with(mock_get_dictionary.return_value)
+
+    if output is None:
+        mock_output_dictionary.assert_called_once_with(mock_di.log.info,
+                                                       mock_parse_response.return_value)
+    else:
+        mock_open.assert_called_once_with(output, 'w')
+        mock_partial.assert_called_once_with(print, file=mock_open.return_value)
+        mock_output_dictionary.assert_called_once_with(mock_partial_writer, mock_parse_response.return_value)
+
+    assert fields == mock_parse_response.return_value
