@@ -57,6 +57,7 @@ def test_get_dictionary(dictionary_interactions, mocker):
     )
     assert resp == 'Mock Json Response'
 
+
 @pytest.mark.parametrize(
     "mock_response_status, mock_exception",
     [
