@@ -13,12 +13,11 @@ from datawave_cli.utilities.utilities import setup_logger, log_http_response
 
 
 class AuthorizationInteractions(BaseInteractions):
+    pod_info = pods.web_authorization_info
+
     def __init__(self, args, log: logging.Logger = logging.getLogger('authorizations_interactions')):
         self.log = log
         super().__init__(args)
-
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_authorization_info, self.namespace).pod_ip
 
     def authorization_whoami(self):
         """
