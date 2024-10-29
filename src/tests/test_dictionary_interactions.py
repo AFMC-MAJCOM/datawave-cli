@@ -77,12 +77,13 @@ def test_get_dictionary_errors(dictionary_interactions, mocker, mock_response_st
     if mock_response_status:
         mock_response.status_code = mock_response_status
 
-    if isinstance(mock_exception, JSONDecodeError):
-        mock_response.json.side_effect = mock_exception
-    elif isinstance(mock_exception, HTTPError):
-        mock_response.raise_for_status.side_effect = mock_exception
-    elif isinstance(mock_exception, Timeout):
-        mock_requests_get.side_effect = mock_exception
+    match mock_exception:
+        case JSONDecodeError():
+            mock_response.json.side_effect = mock_exception
+        case HTTPError():
+            mock_response.raise_for_status.side_effect = mock_exception
+        case _:
+            mock_requests_get.side_effect = mock_exception
 
     mock_requests_get.return_value = mock_response
 
