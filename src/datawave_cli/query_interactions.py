@@ -2,8 +2,6 @@ import base64
 import click
 import logging
 import json
-import pandas as pd
-import requests
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -14,7 +12,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
 
-from .base_interactions import BaseInteractions
+import pandas as pd
+import requests
+
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.generate_html import htmlify
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import depends_on, File, common_options
@@ -220,12 +221,11 @@ class QueryConnection:
 
 
 class QueryInteractions(BaseInteractions):
+    pod_info = pods.web_datawave_info
+
     def __init__(self, args, log):
         self.log = log
         super().__init__(args)
-
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_datawave_info, self.namespace).pod_ip
 
     def perform_query(self, args):
         query_params = QueryParams(query_name=args.query_name,

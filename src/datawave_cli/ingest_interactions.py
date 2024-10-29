@@ -1,7 +1,5 @@
-import argparse
 import click
 import logging
-import pandas as pd
 import re
 import shutil
 import subprocess
@@ -9,6 +7,9 @@ import sys
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
+
+import pandas as pd
+
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import depends_on, File
 from datawave_cli.utilities.utilities import setup_logger, Retry
@@ -120,7 +121,7 @@ def check_for_file(filename: str, namespace: str,
     A boolean indicating whether the file was found or not.
     """
     # Check file got copied to pod
-    cmd = f"ls tmp"
+    cmd = "ls tmp"
     log.info("Checking the test data file got copied to pod...")
     resp = pods.get_specific_pod(pods.hdfs_nn_info, namespace).execute_cmd(cmd)
     log.debug(resp)

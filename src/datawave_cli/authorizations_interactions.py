@@ -1,13 +1,12 @@
 import json
 import logging
-import os
 import sys
 from types import SimpleNamespace
 
 import click
 import requests
 
-from .base_interactions import BaseInteractions
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import common_options
 from datawave_cli.utilities.utilities import setup_logger, log_http_response

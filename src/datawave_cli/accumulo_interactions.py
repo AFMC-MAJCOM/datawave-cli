@@ -5,19 +5,18 @@ from types import SimpleNamespace
 import click
 import requests
 
-from .base_interactions import BaseInteractions
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import common_options
 from datawave_cli.utilities.utilities import setup_logger, log_http_response
 
 
 class AccumuloInteractions(BaseInteractions):
+    pod_info = pods.web_datawave_info
+
     def __init__(self, args, log: logging.Logger = logging.getLogger('accumulo_interactions')):
         self.log = log
         super().__init__(args)
-
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_datawave_info, self.namespace).pod_ip
 
     def reload_accumulo_cache(self):
         """
