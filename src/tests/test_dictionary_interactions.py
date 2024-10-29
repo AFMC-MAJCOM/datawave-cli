@@ -74,8 +74,7 @@ def test_get_dictionary_errors(dictionary_interactions, mocker, mock_response_st
     mocker.patch('datawave_cli.dictionary_interactions.log_http_response')
 
     mock_response = mocker.Mock()
-    if mock_response_status:
-        mock_response.status_code = mock_response_status
+    mock_response.status_code = mock_response_status
 
     match mock_exception:
         case JSONDecodeError():
