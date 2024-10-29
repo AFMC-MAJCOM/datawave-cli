@@ -22,7 +22,7 @@ class DictionaryInteractions(BaseInteractions):
         super().__init__(args)
 
     def get_dictionary(self, auths: str, data_types: str):
-        """REtrieves the dictionary from datawave for the provided data types.
+        """Retrieves the dictionary from datawave for the provided data types.
 
         Parameters
         ----------
@@ -56,7 +56,7 @@ class DictionaryInteractions(BaseInteractions):
             raise RuntimeError(msg) from e
 
     def parse_response(self, resp: dict) -> dict:
-        """Rips apart the HTTP Response content and pulls of the information we desire.
+        """Rips apart the HTTP Response content and pulls out the information we desire.
 
         Parameters
         ----------
@@ -150,6 +150,7 @@ class DictionaryInteractions(BaseInteractions):
 
 
 def main(args):
+    """Creates a DI object and routes the results based on `args.output`"""
     log = setup_logger("dictionary_interactions", log_level=args.log_level)
     di = DictionaryInteractions(args, log)
     resp = di.get_dictionary(args.auths, args.data_types)
