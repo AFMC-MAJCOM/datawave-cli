@@ -229,6 +229,7 @@ def test_output_dictionary(dictionary_interactions, mocker, fields, expected_hea
     ids=["Save to File", "Display in Log"]
 )
 def test_main_routing(mock_args, output, mocker):
+    """Tests that the main executes correctly and routes based on the `args.output` variable."""
     mock_args.output = output
     mock_setup_logger = mocker.patch('datawave_cli.dictionary_interactions.setup_logger',
                                      return_value=mocker.Mock())
