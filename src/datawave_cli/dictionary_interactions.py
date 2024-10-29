@@ -15,11 +15,13 @@ from datawave_cli.utilities.utilities import setup_logger, log_http_response
 
 
 class DictionaryInteractions(BaseInteractions):
-    pod_info = pods.web_dictionary_info
-
     def __init__(self, args, log: logging.Logger = logging.getLogger('dictionary_interactions')):
         self.log = log
         super().__init__(args)
+
+    @property
+    def pod_info(self):
+        return pods.web_dictionary_info
 
     def get_dictionary(self, auths: str, data_types: str):
         """Retrieves the dictionary from datawave for the provided data types.

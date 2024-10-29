@@ -1,5 +1,4 @@
 import base64
-import click
 import logging
 import json
 import sys
@@ -12,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
 
+import click
 import pandas as pd
 import requests
 
@@ -221,11 +221,13 @@ class QueryConnection:
 
 
 class QueryInteractions(BaseInteractions):
-    pod_info = pods.web_datawave_info
-
     def __init__(self, args, log):
         self.log = log
         super().__init__(args)
+
+    @property
+    def pod_info(self):
+        return pods.web_datawave_info
 
     def perform_query(self, args):
         query_params = QueryParams(query_name=args.query_name,

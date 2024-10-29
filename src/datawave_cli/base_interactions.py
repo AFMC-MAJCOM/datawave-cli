@@ -44,6 +44,7 @@ class BaseInteractions(ABC):
         """Gets the pod IP for the selected pod."""
         return pods.get_specific_pod(self.pod_info, self.namespace).pod_ip
 
+    @property
     @abstractmethod
     def pod_info(self):
         """Abstract attribute that subclasses must define to specify the pod they use."""

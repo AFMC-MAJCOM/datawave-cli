@@ -1,4 +1,3 @@
-import click
 import logging
 import re
 import shutil
@@ -8,6 +7,7 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
+import click
 import pandas as pd
 
 from datawave_cli.utilities import pods
