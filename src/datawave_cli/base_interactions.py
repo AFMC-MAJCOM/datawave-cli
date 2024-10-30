@@ -1,5 +1,7 @@
-from abc import ABC, abstractmethod
 import sys
+from abc import ABC, abstractmethod
+
+from datawave_cli.utilities import pods
 
 
 class BaseInteractions(ABC):
@@ -16,8 +18,7 @@ class BaseInteractions(ABC):
             self.cert = (args.cert, args.key)
 
     def init_base_url(self, args):
-        """
-        Define the base_url for interacting with datawave accumulo based on arguments
+        """Define the base_url for interacting with datawave based on arguments
         passed in at call. Has the possibilities of localhost:port, IP:port, or an actual
         url.
         """
@@ -39,6 +40,12 @@ class BaseInteractions(ABC):
         self.headers = {k: v for k, v in args.header}
         self.log.debug(f"Headers Passed in: {self.headers}")
 
-    @abstractmethod
     def get_pod_ip(self):
+        """Gets the pod IP for the selected pod."""
+        return pods.get_specific_pod(self.pod_info, self.namespace).pod_ip
+
+    @property
+    @abstractmethod
+    def pod_info(self):
+        """Abstract attribute that subclasses must define to specify the pod they use."""
         pass

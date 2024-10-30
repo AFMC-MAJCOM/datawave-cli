@@ -25,18 +25,6 @@ def accumulo_interactions(mock_args, mocker):
     return AccumuloInteractions(mock_args, log=mock_logger)
 
 
-def test_get_pod_ip(accumulo_interactions, mocker):
-    """Test that get_pod_ip grabs from correct pod"""
-    mock_pods = mocker.patch('datawave_cli.accumulo_interactions.pods')
-
-    mock_pods.get_specific_pod.return_value.pod_ip = "127.0.0.1"
-
-    pod_ip = accumulo_interactions.get_pod_ip()
-
-    mock_pods.get_specific_pod.assert_called_once_with(mock_pods.web_datawave_info, accumulo_interactions.namespace)
-    assert pod_ip == "127.0.0.1"
-
-
 def test_reload_accumulo_cache(accumulo_interactions, mocker):
     """Tests that reloading the cache hits the correct endpoint and correctly outputs the logs"""
     mock_requests_get = mocker.patch('requests.get')

@@ -1,10 +1,6 @@
 import base64
-import click
 import logging
 import json
-import os
-import pandas as pd
-import requests
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -15,7 +11,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
 
-from .base_interactions import BaseInteractions
+import click
+import pandas as pd
+import requests
+
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.generate_html import htmlify
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import depends_on, File, common_options
@@ -165,7 +165,7 @@ class QueryConnection:
         if self.results_count:
             self.log.info(f'Total results retrieved: {self.results_count}')
         else:
-            self.log.info(f'No results found!')
+            self.log.info('No results found!')
         self.open = False
 
     def __iter__(self):
@@ -225,8 +225,9 @@ class QueryInteractions(BaseInteractions):
         self.log = log
         super().__init__(args)
 
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_datawave_info, self.namespace).pod_ip
+    @property
+    def pod_info(self):
+        return pods.web_datawave_info
 
     def perform_query(self, args):
         query_params = QueryParams(query_name=args.query_name,
@@ -405,7 +406,7 @@ class QueryInteractions(BaseInteractions):
         print(f'Outputting to {filepath.resolve()}')
         filepath.parent.mkdir(parents=True, exist_ok=True)
         if filepath.exists():
-            print(f'Existing output file exists. Attempting to rename it.')
+            print('Existing output file exists. Attempting to rename it.')
             try:
                 renamed_path = filepath.with_stem(filepath.stem + '_old')
                 filepath.rename(renamed_path)

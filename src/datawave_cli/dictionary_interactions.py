@@ -1,18 +1,17 @@
 import logging
-import os
 import sys
+from functools import partial
 from types import SimpleNamespace
+from typing import Callable
 
 import click
 import requests
+from requests.exceptions import HTTPError, JSONDecodeError, Timeout
 
-from .base_interactions import BaseInteractions
+from datawave_cli.base_interactions import BaseInteractions
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.cli_stuff import File, common_options
 from datawave_cli.utilities.utilities import setup_logger, log_http_response
-
-
-base_url = f"dwv-dictionary.{os.environ.get('DWV_URL', '')}"
 
 
 class DictionaryInteractions(BaseInteractions):
@@ -20,53 +19,58 @@ class DictionaryInteractions(BaseInteractions):
         self.log = log
         super().__init__(args)
 
-    def get_pod_ip(self):
-        return pods.get_specific_pod(pods.web_dictionary_info, self.namespace).pod_ip
+    @property
+    def pod_info(self):
+        return pods.web_dictionary_info
 
-    def get_entire_dictionary(self, auths: str, data_types: str, file: str):
-        """
-        Display or save the entire dictionary of datawave, all data types.
+    def get_dictionary(self, auths: str, data_types: str):
+        """Retrieves the dictionary from datawave for the provided data types.
 
         Parameters
         ----------
         auths: str
-            comma delimited string containing all the auths to pull the dictionary for
+            comma delimited string containing all the auths to pull the dictionary with
         data_types: str
             comma delimited string comtaining the data types to pull the dictionary for
-        file: str
-            the name of where to save output
+
+        Returns
+        -------
+        A dictionary containing the json of the response from datawave
+
+        Raises
+        ------
+        RuntimeError:
+            Raised if an invalid response is recieved from the request
         """
         self.log.info("Getting the entire field dictionary in DataWave...")
         request = f"{self.base_url}/dictionary/data/v1/"
         data = {'auths': auths,
                 'dataTypeFilters': data_types}
-        resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
-        log_http_response(resp, self.log)
-        if resp.status_code == 200:
-            fields = self.parse_response(resp)
-            if file is None:
-                self.display_dictionary(fields, self.log)
-            else:
-                self.save_dictionary(file, fields, self.log)
-            return fields
-        else:
-            return {}
+        self.log.debug(f'Hitting {request} with {data} and {self.headers}')
+        try:
+            resp = requests.get(request, data=data, cert=self.cert, headers=self.headers, verify=False)
+            log_http_response(resp, self.log)
+            resp.raise_for_status()
+            return resp.json()
+        except (HTTPError, JSONDecodeError, Timeout) as e:
+            msg = 'Invalid response from dictionary request'
+            self.log.error(f'{msg}: {e}')
+            raise RuntimeError(msg) from e
 
-    def parse_response(self, resp: requests.Response) -> dict:
-        """
-        Rips apart the HTTP Response content and pulls of the information we desire.
+    def parse_response(self, resp: dict) -> dict:
+        """Rips apart the HTTP Response content and pulls out the information we desire.
 
         Parameters
         ----------
-        resp: requests.Response
-            the HTTP Response object.
+        resp: dict
+            The json of the response object.
 
         Returns
         -------
-        A dictionary containing all the information parsed out of the HTTP JSON response.
+        A list of dictionaries containing all the information parsed out of the response.
         """
         fields = []
-        for field in resp.json()['MetadataFields']:
+        for field in resp['MetadataFields']:
             field_name = field['fieldName']
             field_data_type = field['dataType']
             field_forward_indexed = field['forwardIndexed']
@@ -84,78 +88,82 @@ class DictionaryInteractions(BaseInteractions):
                            "Descriptions": field_description, "Last Updated": field_last_updated})
         return fields
 
-    def display_dictionary(self, fields: list,
-                           log: logging.Logger = logging.getLogger('dictionary_interactions')):
-        """
-        Displays a dictionary of all the fields found from the query.
+    def format_dictionary(self, fields: list):
+        """Formats the dictionary ouput into header, row separator, and rows.
 
         Parameters
         ----------
         fields: list
             the fields returned from the filter function.
-        log: logging.Logging
-            The logger object.
+
+        Returns
+        -------
+        header: str
+            The header for the table.
+        row_split: str
+            A splitter to divide header from body.
+        rows: list[str]
+            A list of strings representing the dictionary data.
         """
         if not fields:
-            log.warning("No fields to display.")
-            return
-        dictionary_keys = fields[0].keys()
+            self.log.warning('No fields provided, returning Nones')
+            return None, None, [None]
+
+        dict_keys = fields[0].keys()
         max_lengths = {}
-        # Build Header
+
         header = ""
         row_split = ""
-        for key in dictionary_keys:
+
+        for key in dict_keys:
             max_lengths[key] = max(max([len(str(f[key])) for f in fields]), len(key))
             header += f"{key:{max_lengths[key]}}|"
             row_split += "-" * max_lengths[key] + "|"
-        log.info(header)
-        log.info(row_split)
+
+        rows = []
         for field in fields:
             row = ""
-            for key in dictionary_keys:
+            for key in dict_keys:
                 row += f"{str(field[key]):{max_lengths[key]}}|"
-            log.info(row)
+            rows.append(row)
 
-    def save_dictionary(self, filename: str, fields: list,
-                        log: logging.Logger = logging.getLogger('dictionary_interactions')):
-        """
-        Saves a dictionary of all the fields found from the query.
+        return header, row_split, rows
+
+    def output_dictionary(self, writer: Callable[[str], None], fields: list):
+        """Generalized function to output the dictionary using the writer_func provided.
 
         Parameters
         ----------
-        filename: str
-            the name where to save the dictionary output
-        fields: list
-            the fields returned from the filter function.
-        log: logging.Logger
-            the log object.
+        writer_func : Callable
+            Function that handles writing (log.info, print, etc.).
+        fields : list
+            The fields returned from the filter function.
         """
         if not fields:
-            log.warning("No fields to display.")
-            return
-        dictionary_keys = fields[0].keys()
-        max_lengths = {}
-        header = ""
-        row_split = ""
-        for key in dictionary_keys:
-            max_lengths[key] = max(max([len(str(f[key])) for f in fields]), len(key))
-            header += f"{key:{max_lengths[key]}}|"
-            row_split += "-" * max_lengths[key] + "|"
-        with open(filename, 'a') as file:
-            print(header, file=file)
-            print(row_split, file=file)
-            for field in fields:
-                row = ""
-                for key in dictionary_keys:
-                    row += f"{str(field[key]):{max_lengths[key]}}|"
-                print(row, file=file)
+            self.log.warning("No fields to display")
+            return None
+
+        header, row_split, rows = self.format_dictionary(fields)
+
+        writer(header)
+        writer(row_split)
+        for row in rows:
+            writer(row)
 
 
 def main(args):
+    """Creates a DI object and routes the results based on `args.output`"""
     log = setup_logger("dictionary_interactions", log_level=args.log_level)
     di = DictionaryInteractions(args, log)
-    res = di.get_entire_dictionary(args.auths, args.data_types, args.output)
-    return res
+    resp = di.get_dictionary(args.auths, args.data_types)
+    fields = di.parse_response(resp)
+    if args.output is None:
+        di.output_dictionary(di.log.info, fields)
+    else:
+        with open(args.output, 'w') as file:
+            writer = partial(print, file=file)
+            di.output_dictionary(writer, fields)
+    return fields
 
 
 @click.command

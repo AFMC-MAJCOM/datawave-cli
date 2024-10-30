@@ -49,3 +49,26 @@ This will create the `dist/*.whl` file, which can then be installed manually. No
 
 #### Versioning
 When changes are made, increment the version manually in the `pyproject.toml` script. Version updates should be done once per story, rather than with every individual push.
+
+
+## Testing
+
+To run tests for the `datawave_CLI`, make sure to install the optional testing dependencies specified in the `pyproject.toml`. These include `pytest` and the plugins for testing and mocking.
+
+To install the testing dependencies, use the following command:
+
+```bash
+pip install .[testing]
+```
+
+This will install the `pytest` framework and any required plugins as specified in the optional `testing` dependencies section of the `pyproject.toml` file.
+
+Once installed, you can run tests with:
+
+```bash
+pytest
+```
+
+Ensure all tests pass before pushing new changes to keep the project stable.
+
+
