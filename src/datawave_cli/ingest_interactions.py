@@ -15,7 +15,7 @@ from datawave_cli.utilities.cli_stuff import depends_on, File
 from datawave_cli.utilities.utilities import setup_logger, Retry
 
 
-@Retry(time_limit_min=3)
+@Retry(time_limit_min=.5)
 def check_app_statuses(baseline_num_apps: int, namespace: str,
                        log: logging.Logger = logging.getLogger('ingest_interactions')):
     """
@@ -125,7 +125,7 @@ def check_for_file(filename: str, namespace: str,
     log.info("Checking the test data file got copied to pod...")
     resp = pods.get_specific_pod(pods.hdfs_nn_info, namespace).execute_cmd(cmd)
     log.debug(resp)
-    return filename not in resp
+    return filename in resp
 
 
 def copy_file_to_pod(src_file: str, data_type: str,
@@ -148,9 +148,9 @@ def copy_file_to_pod(src_file: str, data_type: str,
         the kubernetes namespace to perform the actions for
     """
     filename = Path(src_file).name
-    if not check_for_file(filename, namespace, log):
+    if check_for_file(filename, namespace, log):
         log.warning("Data file was already found in tmp of pod, assuming data has already been loaded. Not proceeding.")
-        sys.exit()
+        sys.exit(0)
     cmd = [
         'kubectl',
         'cp',
@@ -165,7 +165,7 @@ def copy_file_to_pod(src_file: str, data_type: str,
     proc = subprocess.run(cmd)
     log.info(proc)
 
-    if check_for_file(filename, namespace, log):
+    if not check_for_file(filename, namespace, log):
         log.warning("Test data file was not found inside hadoop pod. Cannot continue with ingest script.")
         sys.exit(1)
 
@@ -177,7 +177,8 @@ def copy_file_to_pod(src_file: str, data_type: str,
     log.info("copy into HDFS complete...")
 
 
-def check_for_required_cmds(log: logging.Logger = logging.getLogger('ingest_interactions')):
+def check_for_required_cmds(cmds_to_check: list[str] = ['kubectl'],
+                            log: logging.Logger = logging.getLogger('ingest_interactions')):
     """
     Checks for any external commands we utilize.
 
@@ -190,7 +191,6 @@ def check_for_required_cmds(log: logging.Logger = logging.getLogger('ingest_inte
     -----
     If any are not found, will exit the script after displaying an error.
     """
-    cmds_to_check = ["kubectl"]
     if any(shutil.which(cmd) is None for cmd in cmds_to_check):
         log.critical(f"Cannot find one of the following: {cmds_to_check}. "
                      + "Please verify installations and try again.")
