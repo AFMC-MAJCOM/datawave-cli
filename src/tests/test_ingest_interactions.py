@@ -2,8 +2,7 @@ import pytest
 
 from datawave_cli.utilities import pods
 from datawave_cli.utilities.utilities import Retry
-from datawave_cli.ingest_interactions import (check_app_statuses, get_mapreduce_statuses, get_accumulo_appstates,
-                                              check_for_file, copy_file_to_pod, check_for_required_cmds, main)
+from datawave_cli import ingest_interactions as ii
 
 
 @pytest.mark.parametrize(
@@ -30,9 +29,9 @@ def test_check_app_statuses(statuses, baseline_num_apps, expected_exception, err
     )
     if expected_exception:
         with pytest.raises(expected_exception, match=error_text):
-            check_app_statuses(baseline_num_apps, "test-namespace", log)
+            ii.check_app_statuses(baseline_num_apps, "test-namespace", log)
     else:
-        check_app_statuses(baseline_num_apps, "test-namespace", log)
+        ii.check_app_statuses(baseline_num_apps, "test-namespace", log)
 
     mock_get_accumulo_appstates.assert_called_once_with("test-namespace", log)
 
@@ -47,7 +46,7 @@ def test_check_app_statuses(statuses, baseline_num_apps, expected_exception, err
 )
 def test_get_mapreduce_statuses(resp, expected_statuses, mocker):
     log = mocker.Mock()
-    statuses = get_mapreduce_statuses(resp, log)
+    statuses = ii.get_mapreduce_statuses(resp, log)
     assert statuses == expected_statuses
 
 
@@ -64,7 +63,7 @@ def test_get_accumulo_appstates(mocker):
         return_value=["FINISHED", "FAILED"]
     )
 
-    statuses = get_accumulo_appstates("test-namespace", log)
+    statuses = ii.get_accumulo_appstates("test-namespace", log)
 
     assert statuses == ["FINISHED", "FAILED"]
     mock_get_specific_pod.assert_called_once_with(pods.yarn_rm_info, "test-namespace")
@@ -89,7 +88,7 @@ def test_check_for_file(resp, expected_result, mocker):
         return_value=mock_pod
     )
 
-    result = check_for_file("testfile.txt", "test-namespace", log)
+    result = ii.check_for_file("testfile.txt", "test-namespace", log)
     assert result == expected_result
     mock_get_specific_pod.assert_called_once_with(pods.hdfs_nn_info, "test-namespace")
     mock_pod.execute_cmd.assert_called_once()
@@ -125,12 +124,12 @@ def test_copy_file_to_pod(check_file_results, expected_warning, expected_exit_co
 
     if expected_exit_code is not None:
         with pytest.raises(SystemExit):
-            copy_file_to_pod(src_file, data_type, mock_log, "test-namespace")
+            ii.copy_file_to_pod(src_file, data_type, mock_log, "test-namespace")
         mock_log.warning.assert_called_once_with(expected_warning)
         mock_exit.assert_called_once_with(expected_exit_code)
         return
     else:
-        copy_file_to_pod(src_file, data_type, mock_log, "test-namespace")
+        ii.copy_file_to_pod(src_file, data_type, mock_log, "test-namespace")
         mock_exit.assert_not_called()
 
     mock_get_specific_pod.assert_called_with(pods.hdfs_nn_info, "test-namespace")
@@ -161,10 +160,10 @@ def test_check_for_required_cmds(cmds_to_check, which_side_effect, should_exit, 
 
     if should_exit:
         with pytest.raises(SystemExit):
-            check_for_required_cmds(cmds_to_check, log)
+            ii.check_for_required_cmds(cmds_to_check, log)
         log.critical.assert_called_once_with(expected_log)
     else:
-        check_for_required_cmds(cmds_to_check, log)
+        ii.check_for_required_cmds(cmds_to_check, log)
         log.critical.assert_not_called()
 
 
@@ -187,7 +186,7 @@ def test_main_routing(args_file_present, mocker):
     mock_copy_file_to_pod = mocker.patch('datawave_cli.ingest_interactions.copy_file_to_pod')
     mock_check_app_statuses = mocker.patch('datawave_cli.ingest_interactions.check_app_statuses')
 
-    main(args)
+    ii.main(args)
 
     mock_setup_logger.assert_called_once_with("ingest_interactions", log_level=args.log_level)
     mock_check_for_required_cmds.assert_called_once()

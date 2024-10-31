@@ -15,7 +15,7 @@ from datawave_cli.utilities.cli_stuff import depends_on, File
 from datawave_cli.utilities.utilities import setup_logger, Retry
 
 
-@Retry(time_limit_min=.5)
+@Retry(time_limit_min=.3)
 def check_app_statuses(baseline_num_apps: int, namespace: str,
                        log: logging.Logger = logging.getLogger('ingest_interactions')):
     """
