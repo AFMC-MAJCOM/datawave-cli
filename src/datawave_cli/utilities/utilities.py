@@ -40,6 +40,8 @@ class Retry:
     With parameters of `tries=math.inf` and `time_limit_min=None` the function
     will be repeatedly called until it stops raising errors.
     """
+    testing = False
+
     def __init__(self, f=None, tries=math.inf, time_limit_min=10, delay_sec=5):
         self.f = f
         self.tries = tries
@@ -56,6 +58,8 @@ class Retry:
                 try:
                     return self.f(*args, **kwargs)
                 except Exception as e:
+                    if Retry.testing:
+                        raise e
                     attempts += 1
                     if attempts >= self.tries:
                         raise TimeoutError(f"Total number of retries exceeded {self.tries}", e)
