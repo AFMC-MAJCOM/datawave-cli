@@ -49,6 +49,8 @@ def test_user():
 
 
 def test_whoami(mocker, authorization_interactions, mock_log_http_response, test_user):
+    """Tests the whoami function call to validate we are getting correct responses
+    and performing correct logic."""
     mock_requests_get = mocker.patch('requests.get')
     mock_response = mocker.Mock()
     mock_response.status_code = 200
@@ -86,6 +88,7 @@ def test_whoami(mocker, authorization_interactions, mock_log_http_response, test
     ]
 )
 def test_whoami_json_errors(mock_status_code, mock_exception, mocker, authorization_interactions):
+    """Tests the whoami with its various potential errors and the error handling."""
     mock_requests_get, mock_response = create_mock_requests_get(mocker, mock_exception, mock_status_code, None)
 
     with pytest.raises(RuntimeError, match='A bad response from the endpoint whoami was found'):
@@ -100,6 +103,7 @@ def test_whoami_json_errors(mock_status_code, mock_exception, mocker, authorizat
 
 
 def test_evict_users_success(mocker, authorization_interactions, mock_log_http_response):
+    """Tests evict_users is called correctly and we the returned is what we eppect."""
     mock_requests_get, mock_response = create_mock_requests_get(mocker, None, 200, "all entries evicted")
 
     resp = authorization_interactions.authorization_evict_users()
@@ -133,6 +137,7 @@ def test_evict_users_success(mocker, authorization_interactions, mock_log_http_r
     ]
 )
 def test_evict_users_errors(mock_status_code, mock_resp_text, mock_exception, mocker, authorization_interactions):
+    """Tests the evict_users handles errors properly."""
     mock_requests_get, mock_response = create_mock_requests_get(mocker, mock_exception, mock_status_code,
                                                                 mock_resp_text)
     with pytest.raises(RuntimeError, match="An error occurred while requesting to evict all users"):
