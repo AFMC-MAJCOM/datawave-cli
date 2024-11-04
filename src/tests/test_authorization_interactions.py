@@ -66,9 +66,9 @@ def test_whoami(mocker, authorization_interactions, mock_log_http_response, test
     mock_log_http_response.assert_called_once_with(mock_response, authorization_interactions.log)
     authorization_interactions.log.info.assert_any_call("Getting the authorization details for my cert from DW...")
 
-    assert resp['proxiedUsers'][0]['name'] is test_user['proxiedUsers'][0]['name']
-    assert resp['proxiedUsers'][0]['auths'] is test_user['proxiedUsers'][0]['auths']
-    assert resp['proxiedUsers'][0]['roles'] is test_user['proxiedUsers'][0]['roles']
+    assert resp['proxiedUsers'][0]['name'] == test_user['proxiedUsers'][0]['name']
+    assert resp['proxiedUsers'][0]['auths'] == test_user['proxiedUsers'][0]['auths']
+    assert resp['proxiedUsers'][0]['roles'] == test_user['proxiedUsers'][0]['roles']
 
 
 @pytest.mark.parametrize(
@@ -115,7 +115,7 @@ def test_evict_users_success(mocker, authorization_interactions, mock_log_http_r
     mock_log_http_response.assert_called_once_with(mock_response, authorization_interactions.log)
     authorization_interactions.log.info.assert_any_call("Requesting all users to be evicted from DW...")
 
-    assert resp is mock_response
+    assert resp == mock_response
     assert resp.text is "all entries evicted"
     assert resp.status_code == 200
 
