@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from datawave_cli.authorizations_interactions import AuthorizationInteractions, main
 from tests.utils import create_mock_requests_get
 
+
 @pytest.fixture
 def mock_args():
     args = SimpleNamespace(
@@ -27,6 +28,7 @@ def authorization_interactions(mock_args, mocker):
     mock_logger = mocker.Mock()
     return AuthorizationInteractions(mock_args, log=mock_logger)
 
+
 @pytest.fixture
 def mock_log_http_response(mocker):
     mock_log_http_response = mocker.patch('datawave_cli.authorizations_interactions.log_http_response')
@@ -38,9 +40,9 @@ def test_user():
     return {
         "proxiedUsers": [
             {
-                "name":"test.user",
+                "name": "test.user",
                 "auths": ["auth1", "auth2"],
-                "roles":["AuthorizedUser"]
+                "roles": ["AuthorizedUser"]
             }
         ]
     }
@@ -97,8 +99,7 @@ def test_whoami_json_errors(mock_status_code, mock_exception, mocker, authorizat
     )
 
 
-def test_evict_users_success(mocker, authorization_interactions,
-                     mock_log_http_response):
+def test_evict_users_success(mocker, authorization_interactions, mock_log_http_response):
     mock_requests_get, mock_response = create_mock_requests_get(mocker, None, 200, "all entries evicted")
 
     resp = authorization_interactions.authorization_evict_users()
