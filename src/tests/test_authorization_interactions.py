@@ -51,11 +51,8 @@ def test_user():
 def test_whoami(mocker, authorization_interactions, mock_log_http_response, test_user):
     """Tests the whoami function call to validate we are getting correct responses
     and performing correct logic."""
-    mock_requests_get = mocker.patch('requests.get')
-    mock_response = mocker.Mock()
-    mock_response.status_code = 200
+    mock_requests_get, mock_response = create_mock_requests_get(mocker, None, 200, '')
     mock_response.json.return_value = test_user
-    mock_requests_get.return_value = mock_response
 
     resp = authorization_interactions.authorization_whoami()
 
