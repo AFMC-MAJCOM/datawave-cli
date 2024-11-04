@@ -62,12 +62,11 @@ def main(args):
     log = setup_logger("authorizations_interactions", log_level=args.log_level)
     ai = AuthorizationInteractions(args, log)
 
-    if args.whoami:
-        return ai.authorization_whoami()
-    elif args.evict_users:
+    if args.evict_users:
         return ai.authorization_evict_users()
     else:
-        log.warning("No cmd given, exiting without running anything. Pass '--whoami' or '--evict_users'.")
+        log.warning("No cmd specified, Running whoami endpoint.")
+        return ai.authorization_whoami()
 
 
 @click.command
