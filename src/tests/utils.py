@@ -1,5 +1,6 @@
 import pytest
 import json
+import yaml
 from functools import wraps
 from pathlib import Path
 
@@ -7,16 +8,23 @@ from pathlib import Path
 class ParamLoader:
     def __init__(self, file_path):
         full_path = Path(__file__).resolve().parent / file_path
-        if full_path.suffix != '.json':
-            raise ValueError("Unsupported file format: use .json")
+        match full_path.suffix:
+            case ".json" | ".yaml" | ".yml":
+                pass
+            case _:
+                raise ValueError("Unsupported file format: use .json")
         if not full_path.exists():
             raise FileNotFoundError(f"{file_path} does not exist!")
         self.file_path = full_path
 
     def load_parameters(self, test_name):
-        """Load test parameters for a given test name from the JSON file."""
+        """Load test parameters for a given test name from the JSON or YAML file."""
         with open(self.file_path, 'r') as file:
-            all_parameters = json.load(file)
+            match self.file_path.suffix:
+                case ".json":
+                    all_parameters = json.load(file)
+                case ".yaml" | ".yml":
+                    all_parameters = yaml.safe_load(file)
         data = all_parameters.get(test_name, None)
         if not data or any([key not in data for key in ['argnames', 'args']]):
             raise RuntimeError(f"{test_name} is not properly formatted in {self.file_path}")

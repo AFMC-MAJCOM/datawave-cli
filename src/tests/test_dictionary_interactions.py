@@ -9,7 +9,7 @@ from datawave_cli.dictionary_interactions import DictionaryInteractions, main
 from tests.utils import ParamLoader
 
 
-param_loader = ParamLoader('resources/dict_parameters.json')
+param_loader = ParamLoader('resources/dict_parameters.yaml')
 
 
 @pytest.fixture
