@@ -1,0 +1,140 @@
+{
+    "test_parse_results": {
+        "argnames": ["raw_events", "expected_parsed"],
+        "args": [
+            [
+                {
+                    "Events": [
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value1"}},
+                                {"name": "field2", "Value": {"value": "value2"}}
+                            ]
+                        }
+                    ]
+                },
+                [{"field1": "value1", "field2": "value2"}]
+            ],
+            [
+                {
+                    "Events": [
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value1"}},
+                                {"name": "field2", "Value": {"value": "value2"}}
+                            ]
+                        },
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value3"}},
+                                {"name": "field2", "Value": {"value": "value4"}}
+                            ]
+                        }
+                    ]
+                },
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field1": "value3", "field2": "value4"}
+                ]
+            ],
+            [
+                {
+                    "Events": [
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value1"}},
+                                {"name": "field2", "Value": {"value": "value2"}}
+                            ]
+                        },
+                        {
+                            "Fields": [
+                                {"name": "field2", "Value": {"value": "value4"}},
+                                {"name": "field1", "Value": {"value": "value3"}}
+                            ]
+                        }
+                    ]
+                },
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field1": "value3", "field2": "value4"}
+                ]
+            ],
+            [
+                {
+                    "Events": [
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value1"}},
+                                {"name": "field1", "Value": {"value": "value2"}}
+                            ]
+                        }
+                    ]
+                },
+                [{"field1": ["value1", "value2"]}]
+            ]
+        ],
+        "ids": ["Single Event", "Basic", "Unordered", "List values"]
+    },
+    "test_filter_results": {
+        "argnames": ["results_in", "filter_on", "expected_output", "should_raise"],
+        "args": [
+            [
+                [
+                    {"field1": "value1", "field2": "value2"}
+                ],
+                "field1",
+                [{"field1": "value1"}],
+                false
+            ],
+            [
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field1": "value3", "field3": "value4"}
+                ],
+                "field1",
+                [{"field1": "value1"}, {"field1": "value3"}],
+                false
+            ],
+            [
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field2": "value3", "field3": "value4"}
+                ],
+                "field1",
+                [{"field1": "value1"}, {"field1": "Not Found"}],
+                false
+            ],
+            [
+                [
+                    {"field1": "value1"},
+                    {"field2": "value2"}
+                ],
+                "field3",
+                null,
+                true
+            ],
+            [
+                [
+                    {"field1": "value1"},
+                    {"field2": "value2"}
+                ],
+                null,
+                [{"field1": "value1"}, {"field2": "value2"}],
+                false],
+            [
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field2": "value3", "field3": "value4"}
+                ],
+                "field1,field2",
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field1": "Not Found", "field2": "value3"}
+                ],
+                false
+            ]
+        ],
+        "ids": ["Single event success", "Multiple events success", "Key partially missing",
+        "Key completely missing", "No filter", "Multiple keys"]
+    }
+}

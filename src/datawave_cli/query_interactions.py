@@ -282,7 +282,13 @@ class QueryInteractions(BaseInteractions):
             If the key does not exist in the dataset being filtered.
         """
         parsed = self.parse_results(raw_events)
-        filtered = self.filter_results(parsed, filter_on=filter_on)
+        try:
+            filtered = self.filter_results(parsed, filter_on=filter_on)
+        except KeyError as e:
+            self.log.error(e)
+            self.log.info('Returning empty results')
+            return []
+
         return filtered
 
     def parse_results(self, raw_events: dict):
@@ -358,8 +364,7 @@ class QueryInteractions(BaseInteractions):
         all_keys = {key for event in results_in for key in event.keys()}
         not_found = [key for key in keys if key not in all_keys]
         if not_found:
-            print(repr(KeyError(f'{not_found} not found in any results!')))
-            sys.exit(1)
+            raise KeyError(f'{not_found} not found in any results!')
 
         return [{key: event.get(key, "Not Found") for key in keys} for event in results_in]
 
@@ -400,8 +405,6 @@ class QueryInteractions(BaseInteractions):
         decode_raw: bool
             Whether to decode the raw values and write parquets.
         """
-        log = logging.getLogger('query_interactions')
-
         filepath = Path(filename)
         print(f'Outputting to {filepath.resolve()}')
         filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -412,7 +415,7 @@ class QueryInteractions(BaseInteractions):
                 filepath.rename(renamed_path)
             except PermissionError as e:
                 # Some times it gets a permission error and fails to rename it, even if the file is not in use.
-                log.critical('Failed to rename old file! Check that it is not in use or otherwise locked!')
+                self.log.critical('Failed to rename old file! Check that it is not in use or otherwise locked!')
                 raise e
             print(f'Existing file renamed to {renamed_path}')
 
