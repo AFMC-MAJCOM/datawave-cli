@@ -71,7 +71,6 @@ def main(args):
 
 @click.command
 @common_options
-@click.option("--whoami", is_flag=True, help="Flag to denote to run the whoami endpoint.")
 @click.option("--evict_users", is_flag=True, help="Flag to denote to run the evictUsers endpoint.")
 def authorization(**kwargs):
     """Prints the results of the whoami endpoint for the provided user."""
