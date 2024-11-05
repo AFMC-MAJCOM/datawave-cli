@@ -84,7 +84,7 @@ def test_whoami(mocker, authorization_interactions, mock_log_http_response, test
         'Timeout',
     ]
 )
-def test_whoami_json_errors(mock_status_code, mock_exception, mocker, authorization_interactions):
+def test_whoami_errors(mock_status_code, mock_exception, mocker, authorization_interactions):
     """Tests the whoami with its various potential errors and the error handling."""
     mock_requests_get, mock_response = create_mock_requests_get(mocker, mock_exception, mock_status_code, None)
 
@@ -116,7 +116,7 @@ def test_evict_users_success(mocker, authorization_interactions, mock_log_http_r
     authorization_interactions.log.info.assert_any_call("Requesting all users to be evicted from DW...")
 
     assert resp == mock_response
-    assert resp.text is "all entries evicted"
+    assert resp.text == "all entries evicted"
     assert resp.status_code == 200
 
 
