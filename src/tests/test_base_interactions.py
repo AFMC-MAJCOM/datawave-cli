@@ -64,7 +64,8 @@ def mock_args_with_url(mock_args):
     [
         ("mock_args", "test-cert.pem"),
         ("mock_args_with_key", ("test-cert.pem", "test-key.pem")),
-    ]
+    ],
+    ids=['Init cert without key', 'Init cert with key']
 )
 def test_init_cert(args_fixture, expected_cert, request, mocker):
     """Test that cert is initialized correctly based on args."""

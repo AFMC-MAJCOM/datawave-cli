@@ -151,7 +151,7 @@ def test_copy_file_to_pod(check_file_results, expected_warning, expected_exit_co
         (["kubectl", "hdfs"], ["/usr/bin/kubectl", None], True, "Cannot find one of the following: ['kubectl', 'hdfs']."
          " Please verify installations and try again.")
     ],
-    ids=["single_command_success", "single_command_fail", "multiple_commands_success", "multiple_commands_fail"]
+    ids=["Single command success", "Single command fail", "Multiple commands success", "Multiple commands fail"]
 )
 def test_check_for_required_cmds(cmds_to_check, which_side_effect, should_exit, expected_log, mocker):
     log = mocker.Mock()
