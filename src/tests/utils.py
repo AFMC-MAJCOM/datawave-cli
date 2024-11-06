@@ -1,9 +1,9 @@
-import pytest
 import json
-import yaml
 from functools import wraps
 from pathlib import Path
 
+import pytest
+import yaml
 from requests.exceptions import HTTPError, JSONDecodeError
 
 
