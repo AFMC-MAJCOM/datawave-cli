@@ -6,6 +6,10 @@ from types import SimpleNamespace
 from requests.exceptions import HTTPError, JSONDecodeError, Timeout
 
 from datawave_cli.dictionary_interactions import DictionaryInteractions, main
+from tests.utils import ParamLoader
+
+
+param_loader = ParamLoader('resources/dict_parameters.yaml')
 
 
 @pytest.fixture
@@ -162,16 +166,7 @@ def test_parse_response(dictionary_interactions, mocker):
     assert result == expected_output
 
 
-@pytest.mark.parametrize(
-    "fields, expected_header, expected_row_split, expected_rows",
-    [(case['fields'], case['expected_header'], case['expected_row_split'], case['expected_rows'])
-     for case in load_test_data('resources/test_dict_data.json')],
-    ids=[
-        'One row',
-        'Two rows long description',
-        'Empty fields'
-    ]
-)
+@param_loader.parametrize
 def test_format_dictionary(dictionary_interactions, fields, expected_header, expected_row_split, expected_rows):
     """Tests that `format_dictionary` correctly formats the fields into header, split, and rows."""
     header, row_split, rows = dictionary_interactions.format_dictionary(fields)
@@ -194,15 +189,7 @@ def test_output_dictionary_no_fields(dictionary_interactions, mocker):
     mock_writer.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "fields, expected_header, expected_row_split, expected_rows",
-    [(case['fields'], case['expected_header'], case['expected_row_split'], case['expected_rows'])
-     for case in load_test_data('resources/test_dict_data.json')][:-1],
-    ids=[
-        'One row',
-        'Two rows long description'
-    ]
-)
+@param_loader.parametrize
 def test_output_dictionary(dictionary_interactions, mocker, fields, expected_header, expected_row_split, expected_rows):
     """Tests that `output_dictionary` is correctly calling the writer function"""
     mock_writer = mocker.Mock()
@@ -210,7 +197,12 @@ def test_output_dictionary(dictionary_interactions, mocker, fields, expected_hea
     mock_formatter = mocker.patch.object(dictionary_interactions, 'format_dictionary',
                                          return_value=[expected_header, expected_row_split, expected_rows])
 
-    dictionary_interactions.output_dictionary(mock_writer, fields)
+    res = dictionary_interactions.output_dictionary(mock_writer, fields)
+
+    if fields is None:
+        dictionary_interactions.log.warning.assert_called_with('No fields to display')
+        assert res is None
+        return
 
     mock_formatter.assert_called_once_with(fields)
     mock_writer.assert_has_calls([
