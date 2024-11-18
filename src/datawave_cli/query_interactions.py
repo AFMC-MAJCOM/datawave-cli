@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from dataclasses import dataclass
 from io import BytesIO
+from itertools import groupby
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace
@@ -331,15 +332,15 @@ class QueryInteractions(BaseInteractions):
             parsed_events.append(event_data)
 
         # There are no guarantees to the order of data returned by datawave.
-        # For consistency we are just going to iterate over all events and order them based on the first's order
-        desired_order = []
+        # For consistency we are just going to iterate over all events and order them based on the sorted key order
+        def sort_keys(event):
+            return tuple(sorted(event.keys()))
+
+        sorted_events = sorted(parsed_events, key=sort_keys)
         ordered_events = []
-        for event in parsed_events:
-            if event.keys() not in desired_order:
-                desired_order.append(event.keys())
-            for do in desired_order:
-                if event.keys() == do:
-                    ordered_events.append({key: event[key] for key in do})
+        for key_set, group in groupby(sorted_events, key=sort_keys):
+            for event in group:
+                ordered_events.append({key: event[key] for key in key_set})
 
         return ordered_events
 
