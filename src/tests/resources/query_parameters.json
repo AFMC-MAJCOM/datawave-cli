@@ -71,9 +71,45 @@
                     ]
                 },
                 [{"field1": ["value1", "value2"]}]
+            ],
+            [
+                {
+                    "Events": [
+                        {
+                            "Fields": [
+                                {"name": "field1", "Value": {"value": "value1"}},
+                                {"name": "field2", "Value": {"value": "value2"}}
+                            ]
+                        },
+                        {
+                            "Fields": [
+                                {"name": "field2", "Value": {"value": "value4"}},
+                                {"name": "field1", "Value": {"value": "value3"}}
+                            ]
+                        },
+                        {
+                            "Fields": [
+                                {"name": "field3", "Value": {"value": "value5"}},
+                                {"name": "field4", "Value": {"value": "value6"}}
+                            ]
+                        },
+                        {
+                            "Fields": [
+                                {"name": "field4", "Value": {"value": "value8"}},
+                                {"name": "field3", "Value": {"value": "value7"}}
+                            ]
+                        }
+                    ]
+                },
+                [
+                    {"field1": "value1", "field2": "value2"},
+                    {"field1": "value3", "field2": "value4"},
+                    {"field3": "value5", "field4": "value6"},
+                    {"field3": "value7", "field4": "value8"}
+                ]
             ]
         ],
-        "ids": ["Single Event", "Basic", "Unordered", "List values"]
+        "ids": ["Single Event", "Basic", "Unordered", "List values", "Multiple events, different fields"]
     },
     "test_filter_results": {
         "argnames": ["results_in", "filter_on", "expected_output", "should_raise"],

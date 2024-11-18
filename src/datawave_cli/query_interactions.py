@@ -332,8 +332,14 @@ class QueryInteractions(BaseInteractions):
 
         # There are no guarantees to the order of data returned by datawave.
         # For consistency we are just going to iterate over all events and order them based on the first's order
-        desired_order = parsed_events[0].keys()
-        ordered_events = [{key: event[key] for key in desired_order} for event in parsed_events]
+        desired_order = []
+        ordered_events = []
+        for event in parsed_events:
+            if event.keys() not in desired_order:
+                desired_order.append(event.keys())
+            for do in desired_order:
+                if event.keys() == do:
+                    ordered_events.append({key: event[key] for key in do})
 
         return ordered_events
 
