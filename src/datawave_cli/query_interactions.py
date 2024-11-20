@@ -32,6 +32,7 @@ class QueryParams:
     page_size: int = 5
     begin: str = '19700101'
     end: str = '20990101'
+    query_language: str = "JEXL"
 
     def get(self):
         return {"queryName": self.query_name,
@@ -40,7 +41,8 @@ class QueryParams:
                 "begin": self.begin,
                 "end": self.end,
                 "query": self.query,
-                "auths": self.auths
+                "auths": self.auths,
+                "query.syntax": self.query_language
                 }
 
 
@@ -231,9 +233,14 @@ class QueryInteractions(BaseInteractions):
         return pods.web_datawave_info
 
     def perform_query(self, args):
-        query_params = QueryParams(query_name=args.query_name,
-                                   query=args.query,
-                                   auths=args.auths)
+        query_params = QueryParams(query_name=getattr(args, 'query_name'),
+                                   query=getattr(args, 'query'),
+                                   auths=getattr(args, 'auths'),
+                                   page_size=getattr(args, 'page_size', 5),
+                                   begin=getattr(args, 'begin_date', '19700101'),
+                                   end=getattr(args, 'end_date', '20991231'),
+                                   query_language=getattr(args, 'query_language', 'JEXL')
+                                   )
 
         events = []
         with QueryConnection(base_url=self.base_url, cert=self.cert, query_params=query_params, log=self.log,
@@ -460,12 +467,14 @@ def main(args):
               help="The name given to the query in the query request.")
 @click.option("--auths", type=str, required=True,
               help="A comma-separated list of authorizations to use within the query request.")
-@click.option("-b", "--begin-date", type=str, default="19700101",
+@click.option("-b", "--begin-date", type=str, default="19700101", show_default=True,
               help="The start date for the query, in the format YYYYMMDD (e.g., 19700101).")
-@click.option("-e", "--end-date", type=str, default="20991212",
+@click.option("-e", "--end-date", type=str, default="20991212", show_default=True,
               help="The end date for the query, in the format YYYYMMDD (e.g., 20991212).")
-@click.option("--auths", type=str, required=True,
-              help="A comma-separated list of authorizations to use within the query request.")
+@click.option("-s", "--page-size", type=int, default=5, show_default=True,
+              help="The number of events to return per 'next' call.")
+@click.option("--query-language", type=click.Choice(['JEXL', 'LUCENE']), default="JEXL", show_default=True,
+              help="The syntax and language of the passed in query.")
 @click.option("-f", "--filter", type=str, default=None, show_default=True,
               help="A single key or comma delineated list of keys without spaces to filter the data on.")
 @click.option("-o", "--output", type=File(file_type='.json'), show_default=True,

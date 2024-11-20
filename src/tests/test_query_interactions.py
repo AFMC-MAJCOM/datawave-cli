@@ -30,7 +30,8 @@ def test_query_params():
         "begin": "19700101",
         "end": "20990101",
         "query": "test_query",
-        "auths": "test_auths"
+        "auths": "test_auths",
+        "query.syntax": "JEXL"
     }
     assert params.get() == expected_dict
 
